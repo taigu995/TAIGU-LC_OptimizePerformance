@@ -1,0 +1,85 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>TAIGU-LC_OptimizePerformance</AssemblyName>
+    <RootNamespace>TAIGU_LC_OptimizePerformance</RootNamespace>
+    <Description>TAIGU's Lethal Company Ultimate Performance Optimization Mod</Description>
+    <Version>1.0.0</Version>
+    <Authors>TAIGU</Authors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <NoWarn>CS0436;CS0626;CS0169;CS0618</NoWarn>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- BepInEx Core References -->
+  <ItemGroup>
+    <Reference Include="BepInEx">
+      <HintPath>GameRefs/Core/BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>GameRefs/Core/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Preloader">
+      <HintPath>GameRefs/Core/BepInEx.Preloader.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Game Managed References -->
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>GameRefs/Managed/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>GameRefs/Managed/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>GameRefs/Managed/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>GameRefs/Managed/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>GameRefs/Managed/UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>GameRefs/Managed/UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>GameRefs/Managed/UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>GameRefs/Managed/UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>GameRefs/Managed/UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>GameRefs/Managed/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>GameRefs/Managed/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Netcode.Runtime">
+      <HintPath>GameRefs/Managed/Unity.Netcode.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

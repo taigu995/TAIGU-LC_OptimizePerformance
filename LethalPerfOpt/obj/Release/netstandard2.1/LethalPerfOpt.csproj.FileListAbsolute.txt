@@ -1,0 +1,8 @@
+/workspace/projects/LethalPerfOpt/bin/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.deps.json
+/workspace/projects/LethalPerfOpt/bin/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.dll
+/workspace/projects/LethalPerfOpt/bin/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.pdb
+/workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/LethalPerfOpt.csproj.AssemblyReference.cache
+/workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/LethalPerfOpt.GeneratedMSBuildEditorConfig.editorconfig
+/workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/LethalPerfOpt.csproj.CoreCompileInputs.cache
+/workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.dll
+/workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.pdb
