@@ -59,9 +59,6 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
 
             // Also update ModConfig values so UI sliders reflect the changes
             UpdateModConfigFromPreset(preset);
-
-            // Apply HDRP overrides to ensure settings take effect
-            ApplyHDRPOverridesForPreset(preset);
         }
 
         private void UpdateModConfigFromPreset(string preset)
@@ -102,82 +99,6 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             }
 
             Plugin.LogSource.LogInfo($"[LethalPerfOpt:Quality] ModConfig updated for preset '{preset}'");
-        }
-
-        private void ApplyHDRPOverridesForPreset(string preset)
-        {
-            // Apply HDRP-specific settings to ensure presets take effect in HDRP pipeline
-            try
-            {
-                var pipelineAsset = GraphicsSettings.currentRenderPipeline;
-                if (pipelineAsset == null)
-                {
-                    Plugin.LogSource.LogWarning("[LethalPerfOpt:Quality] No HDRP pipeline asset found");
-                    return;
-                }
-
-                // Use reflection to access HDRP-specific settings
-                var pipelineType = pipelineAsset.GetType();
-
-                switch (preset)
-                {
-                    case "Ultra":
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowMaxDistance", 300f);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowAtlasResolution", 2048);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_EnableVolumetricFog", true);
-                        break;
-                    case "High":
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowMaxDistance", 200f);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowAtlasResolution", 1024);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_EnableVolumetricFog", true);
-                        break;
-                    case "Balanced":
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowMaxDistance", 150f);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowAtlasResolution", 512);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_EnableVolumetricFog", true);
-                        break;
-                    case "Performance":
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowMaxDistance", 80f);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowAtlasResolution", 256);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_EnableVolumetricFog", false);
-                        break;
-                    case "Extreme":
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowMaxDistance", 50f);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_ShadowAtlasResolution", 256);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_EnableVolumetricFog", false);
-                        SetHDRPProperty(pipelineType, pipelineAsset, "_EnableShadows", false);
-                        break;
-                }
-
-                Plugin.LogSource.LogInfo($"[LethalPerfOpt:Quality] HDRP overrides applied for preset '{preset}'");
-            }
-            catch (System.Exception ex)
-            {
-                Plugin.LogSource.LogError($"[LethalPerfOpt:Quality] HDRP override error: {ex.Message}");
-            }
-        }
-
-        private void SetHDRPProperty(System.Type type, object obj, string propertyName, object value)
-        {
-            try
-            {
-                var field = type.GetField(propertyName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (field != null)
-                {
-                    field.SetValue(obj, value);
-                    return;
-                }
-
-                var property = type.GetProperty(propertyName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (property != null && property.CanWrite)
-                {
-                    property.SetValue(obj, value, null);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Plugin.LogSource.LogWarning($"[LethalPerfOpt:Quality] Failed to set HDRP property '{propertyName}': {ex.Message}");
-            }
         }
 
         private void ApplyUltraSettings()

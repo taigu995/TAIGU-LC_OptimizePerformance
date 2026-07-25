@@ -599,6 +599,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             if (GUILayout.Button(new GUIContent("极致画质 - 最高视觉质量", "最高画质，轻微性能优化，适合高端显卡"), UIStyles.ButtonStyle))
             {
                 Plugin.QualityOpt?.ApplyPreset("Ultra");
+                Plugin.ReapplyAllOptimizations();
             }
             GUILayout.Space(3);
             GUILayout.Label("最佳画质，少量性能优化", UIStyles.LabelStyle);
@@ -607,6 +608,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             if (GUILayout.Button(new GUIContent("高画质 - 高质量", "优秀画质，适中的性能提升，适合中高端显卡"), UIStyles.ButtonStyle))
             {
                 Plugin.QualityOpt?.ApplyPreset("High");
+                Plugin.ReapplyAllOptimizations();
             }
             GUILayout.Space(3);
             GUILayout.Label("优秀画质，适中的性能提升", UIStyles.LabelStyle);
@@ -615,6 +617,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             if (GUILayout.Button(new GUIContent("均衡 - 推荐方案", "画质与性能的平衡之选，适合大多数配置"), UIStyles.ButtonStyle))
             {
                 Plugin.QualityOpt?.ApplyPreset("Balanced");
+                Plugin.ReapplyAllOptimizations();
             }
             GUILayout.Space(3);
             GUILayout.Label("画质与性能的平衡之选", UIStyles.LabelStyle);
@@ -623,6 +626,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             if (GUILayout.Button(new GUIContent("性能优先 - FPS 优先", "显著提升帧率，适度降低画质，适合中低端显卡"), UIStyles.ButtonStyle))
             {
                 Plugin.QualityOpt?.ApplyPreset("Performance");
+                Plugin.ReapplyAllOptimizations();
             }
             GUILayout.Space(3);
             GUILayout.Label("显著提升帧率，适度降低画质", UIStyles.LabelStyle);
@@ -631,6 +635,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             if (GUILayout.Button(new GUIContent("极限性能 - 最大帧率", "低配硬件最大帧率，最低画质开销，适合低端配置"), UIStyles.ButtonStyle))
             {
                 Plugin.QualityOpt?.ApplyPreset("Extreme");
+                Plugin.ReapplyAllOptimizations();
             }
             GUILayout.Space(3);
             GUILayout.Label("低配硬件最大帧率，最低画质开销", UIStyles.LabelStyle);

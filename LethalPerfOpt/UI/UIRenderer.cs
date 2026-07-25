@@ -1,57 +1,40 @@
 using UnityEngine;
-using System.Collections;
 using TAIGU_LC_OptimizePerformance.Config;
 
 namespace TAIGU_LC_OptimizePerformance.UI
 {
     /// <summary>
-    /// 独立的 MonoBehaviour 组件，用于渲染 UI。
-    /// 多重保障确保 OnGUI/Update 被 Unity 调用：
-    /// 1. Awake/Start/OnEnable 三重生命周期钩子
-    /// 2. 协程延迟初始化（等待场景加载）
-    /// 3. 全面诊断日志
+    /// 独立的 MonoBehaviour UI 渲染器。
+    /// 通过独立 GameObject 运行，确保 Update/OnGUI 被 Unity 生命周期调用。
     /// </summary>
     public class UIRenderer : MonoBehaviour
     {
-        private static UIRenderer _instance;
+        public static UIRenderer Instance { get; private set; }
 
         private PerformanceUI _perfUI;
+        private bool _isVisible;
         private bool _initialized;
-        private bool _updateCalled;
-        private bool _onGUISinceCalled;
         private int _frameCount;
 
-        // 光标状态保存/恢复
-        private CursorLockMode _savedCursorState;
-        private bool _savedCursorVisible;
-        private bool _cursorStateSaved;
-        private bool _wasUIVisible;
+        // 诊断
+        private bool _updateCalled;
+        private bool _onGUICalled;
 
-        public static UIRenderer Instance => _instance;
+        public bool IsVisible => _isVisible;
+        public bool IsInitialized => _initialized;
 
-        /// <summary>
-        /// 初始化 - 设置 PerformanceUI 引用
-        /// </summary>
         public void Initialize(PerformanceUI perfUI)
         {
             _perfUI = perfUI;
             _initialized = true;
+            Instance = this;
             Plugin.LogSource.LogInfo("[TAIGU-UI] Initialize() 已调用, _initialized=true");
         }
 
         private void Awake()
         {
-            _instance = this;
             Plugin.LogSource.LogInfo("[TAIGU-UI] UIRenderer.Awake() 被调用");
-        }
-
-        private void Start()
-        {
-            Plugin.LogSource.LogInfo("[TAIGU-UI] UIRenderer.Start() 被调用 - Unity 生命周期正常");
-            // 确保组件启用且游戏对象激活
-            this.enabled = true;
-            gameObject.SetActive(true);
-            Plugin.LogSource.LogInfo($"[TAIGU-UI] enabled={this.enabled}, activeSelf={gameObject.activeSelf}, activeInHierarchy={gameObject.activeInHierarchy}");
+            Instance = this;
         }
 
         private void OnEnable()
@@ -64,165 +47,93 @@ namespace TAIGU_LC_OptimizePerformance.UI
             Plugin.LogSource.LogInfo("[TAIGU-UI] UIRenderer.OnDisable() 被调用");
         }
 
+        private void Start()
+        {
+            Plugin.LogSource.LogInfo("[TAIGU-UI] UIRenderer.Start() 被调用 - Unity 生命周期正常");
+            Plugin.LogSource.LogInfo($"[TAIGU-UI] enabled={enabled}, activeSelf={gameObject.activeSelf}, activeInHierarchy={gameObject.activeInHierarchy}");
+        }
+
         private void Update()
         {
-            _frameCount++;
-
-            // 每 300 帧输出一次诊断日志（约 5 秒）
-            if (_frameCount % 300 == 0)
-            {
-                var kb = UnityEngine.InputSystem.Keyboard.current;
-                Plugin.LogSource.LogInfo($"[TAIGU-UI] Update() 运行中... 帧={_frameCount}, OnGUI={_onGUISinceCalled}, KB={kb != null}, IsVisible={_perfUI?.IsVisible}");
-            }
+            if (!_initialized || _perfUI == null) return;
 
             if (!_updateCalled)
             {
                 _updateCalled = true;
-                var keyboardAvailable = UnityEngine.InputSystem.Keyboard.current != null;
-                Plugin.LogSource.LogInfo($"[TAIGU-UI] Update() 首次被调用！ Keyboard.current 可用: {keyboardAvailable}");
+                Plugin.LogSource.LogInfo("[TAIGU-UI] Update() 首次被调用！ Keyboard.current 可用: " + (UnityEngine.InputSystem.Keyboard.current != null));
             }
 
-            if (!_initialized || _perfUI == null) return;
-
-            // 更新性能监控
-            if (Plugin.PerfMonitor != null)
+            // 每 300 帧输出一次诊断日志
+            _frameCount++;
+            if (_frameCount % 300 == 0)
             {
-                Plugin.PerfMonitor.Update();
+                Plugin.LogSource.LogInfo($"[TAIGU-UI] Update() 运行中... 帧={_frameCount}, OnGUI={_onGUICalled}, KB={UnityEngine.InputSystem.Keyboard.current != null}, IsVisible={_isVisible}");
             }
 
-            // 按键检测（使用 Unity Input System Package）
-            try
+            // 使用 Input System 检测 F5 键
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.f5Key.wasPressedThisFrame)
             {
-                var keyboard = UnityEngine.InputSystem.Keyboard.current;
-                if (keyboard != null)
+                _isVisible = !_isVisible;
+                _perfUI.IsVisible = _isVisible;
+                Plugin.LogSource.LogInfo($"[TAIGU-UI] F5 切换 UI: {_isVisible}");
+            }
+
+            // 使用 Input System 检测 F6 键 (切换 FPS 显示)
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.f6Key.wasPressedThisFrame)
+            {
+                _perfUI.ShowFPS = !_perfUI.ShowFPS;
+                Plugin.LogSource.LogInfo($"[TAIGU-UI] F6 切换 FPS: {_perfUI.ShowFPS}");
+            }
+
+            // 每帧管理光标状态
+            // 当 UI 可见时，强制解锁光标以支持拖动
+            if (_isVisible)
+            {
+                // 强制解锁光标 - 让玩家可以拖动 UI 窗口
+                if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
                 {
-                    if (keyboard.f5Key.wasPressedThisFrame)
-                    {
-                        _perfUI.IsVisible = !_perfUI.IsVisible;
-                        Plugin.LogSource.LogInfo($"[TAIGU-UI] UI 切换: {_perfUI.IsVisible}");
-
-                        if (_perfUI.IsVisible)
-                        {
-                            // 显示 UI 时保存光标状态并解锁
-                            _savedCursorState = Cursor.lockState;
-                            _savedCursorVisible = Cursor.visible;
-                            _cursorStateSaved = true;
-                            _wasUIVisible = true;
-                            Cursor.lockState = CursorLockMode.None;
-                            Cursor.visible = true;
-                        }
-                        else
-                        {
-                            // 隐藏 UI 时恢复光标状态
-                            _wasUIVisible = false;
-                            if (_cursorStateSaved)
-                            {
-                                Cursor.lockState = _savedCursorState;
-                                Cursor.visible = _savedCursorVisible;
-                            }
-                        }
-                    }
-
-                    if (keyboard.f6Key.wasPressedThisFrame)
-                    {
-                        _perfUI.ShowFPS = !_perfUI.ShowFPS;
-                        Plugin.LogSource.LogInfo($"[TAIGU-UI] FPS 显示切换: {_perfUI.ShowFPS}");
-                    }
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
                 }
-            }
-            catch (System.Exception ex)
-            {
-                Plugin.LogSource.LogError($"[TAIGU-UI] 按键检测异常: {ex.Message}");
             }
         }
 
         private void LateUpdate()
         {
-            // LateUpdate 在所有 Update 之后执行，覆盖游戏每帧的光标锁定
-            // 确保 UI 显示时光标始终可用，支持拖动和点击
-            if (_perfUI != null)
+            // LateUpdate 每帧重新强制光标状态（因为游戏自己的 Update 会重新锁定光标）
+            if (_isVisible)
             {
-                if (_perfUI.IsVisible)
-                {
-                    // UI 显示时强制解锁光标
-                    if (Cursor.lockState != CursorLockMode.None)
-                    {
-                        Cursor.lockState = CursorLockMode.None;
-                    }
-                    if (!Cursor.visible)
-                    {
-                        Cursor.visible = true;
-                    }
-                    _wasUIVisible = true;
-                }
-                else if (_wasUIVisible && _cursorStateSaved)
-                {
-                    // UI 刚从可见变为隐藏时，恢复光标状态
-                    _wasUIVisible = false;
-                    Cursor.lockState = _savedCursorState;
-                    Cursor.visible = _savedCursorVisible;
-                }
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
         }
 
         private void OnGUI()
         {
-            if (!_onGUISinceCalled)
+            if (!_initialized || _perfUI == null) return;
+
+            if (!_onGUICalled)
             {
-                _onGUISinceCalled = true;
+                _onGUICalled = true;
                 Plugin.LogSource.LogInfo("[TAIGU-UI] OnGUI() 首次被调用！");
             }
 
-            if (!_initialized || _perfUI == null) return;
-
-            try
+            if (_isVisible)
             {
-                if (_perfUI.IsVisible || _perfUI.ShowFPS)
-                {
-                    _perfUI.OnGUI();
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Plugin.LogSource.LogError($"[TAIGU-UI] OnGUI 渲染异常: {ex.Message}");
+                _perfUI.OnGUI();
             }
         }
 
         /// <summary>
-        /// 由 Harmony 补丁调用的渲染方法（兜底方案）
+        /// 由 Harmony 补丁调用的备用渲染方法
         /// </summary>
         public void RenderGUI()
         {
             if (!_initialized || _perfUI == null) return;
-
-            try
+            if (_isVisible)
             {
-                if (_perfUI.IsVisible || _perfUI.ShowFPS)
-                {
-                    _perfUI.OnGUI();
-                }
+                _perfUI.OnGUI();
             }
-            catch (System.Exception ex)
-            {
-                Plugin.LogSource.LogError($"[TAIGU-UI] RenderGUI 渲染异常: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 协程延迟初始化 UI（等待场景加载完成后）
-        /// </summary>
-        public IEnumerator DelayedInitCoroutine()
-        {
-            Plugin.LogSource.LogInfo("[TAIGU-UI] 延迟初始化协程启动...");
-            
-            // 等待 2 秒，确保场景完全加载
-            yield return new WaitForSeconds(2f);
-            
-            Plugin.LogSource.LogInfo($"[TAIGU-UI] 延迟初始化完成，enabled={this.enabled}, activeSelf={gameObject.activeSelf}");
-            
-            // 确保组件启用
-            this.enabled = true;
-            gameObject.SetActive(true);
         }
     }
 }
