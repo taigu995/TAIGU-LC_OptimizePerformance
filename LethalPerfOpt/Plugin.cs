@@ -71,19 +71,6 @@ namespace TAIGU_LC_OptimizePerformance
 
         private void Update()
         {
-            // Handle hotkey for UI toggle
-            if (Input.GetKeyDown(ModConfig.ToggleUIKey.Value))
-            {
-                PerfUI.IsVisible = !PerfUI.IsVisible;
-                LogSource.LogDebug($"[{PluginName}] UI 切换: {PerfUI.IsVisible}");
-            }
-
-            // Handle FPS counter toggle
-            if (Input.GetKeyDown(ModConfig.ToggleFPSKey.Value))
-            {
-                PerfUI.ShowFPS = !PerfUI.ShowFPS;
-            }
-
             // Update performance monitor
             PerfMonitor.Update();
 
@@ -96,6 +83,24 @@ namespace TAIGU_LC_OptimizePerformance
 
         private void OnGUI()
         {
+            // Handle hotkey for UI toggle (using Event for reliability)
+            if (Event.current != null && Event.current.type == EventType.KeyDown)
+            {
+                if (Event.current.keyCode == ModConfig.ToggleUIKey.Value)
+                {
+                    PerfUI.IsVisible = !PerfUI.IsVisible;
+                    LogSource.LogInfo($"[{PluginName}] UI 切换: {PerfUI.IsVisible}");
+                    Event.current.Use();
+                }
+                else if (Event.current.keyCode == ModConfig.ToggleFPSKey.Value)
+                {
+                    PerfUI.ShowFPS = !PerfUI.ShowFPS;
+                    LogSource.LogInfo($"[{PluginName}] FPS 显示切换: {PerfUI.ShowFPS}");
+                    Event.current.Use();
+                }
+            }
+
+            // Render UI
             if (PerfUI.IsVisible || PerfUI.ShowFPS)
             {
                 PerfUI.OnGUI();
