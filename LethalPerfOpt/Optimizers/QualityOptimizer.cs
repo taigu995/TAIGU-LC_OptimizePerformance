@@ -23,6 +23,12 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo($"[LethalPerfOpt:Quality] Quality preset '{_originalQuality}' applied");
         }
 
+        public void Reapply()
+        {
+            _isApplied = false;
+            Apply();
+        }
+
         public void Revert()
         {
             _isApplied = false;

@@ -220,6 +220,12 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             }
         }
 
+        public void Reapply()
+        {
+            _isApplied = false;
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;

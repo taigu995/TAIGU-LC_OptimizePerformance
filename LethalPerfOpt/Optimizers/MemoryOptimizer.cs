@@ -89,6 +89,12 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Memory] 内存优化已应用");
         }
 
+        public void Reapply()
+        {
+            _isApplied = false;
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;

@@ -88,7 +88,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             GUILayout.BeginHorizontal();
 
             if (GUILayout.Button("应用全部优化", UIStyles.ButtonStyle))
-                Plugin.ApplyAllOptimizations();
+                Plugin.ReapplyAllOptimizations();
 
             if (GUILayout.Button("恢复全部默认", UIStyles.ButtonStyle))
                 Plugin.RevertAllOptimizations();
@@ -233,7 +233,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用渲染设置", UIStyles.ButtonStyle))
-                Plugin.RenderOpt?.Apply();
+                Plugin.RenderOpt?.Reapply();
         }
 
         private void DrawMemoryTab()
@@ -327,7 +327,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用物理设置", UIStyles.ButtonStyle))
-                Plugin.PhysicsOpt?.Apply();
+                Plugin.PhysicsOpt?.Reapply();
         }
 
         private void DrawCullingTab()
@@ -360,7 +360,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用遮挡剔除设置", UIStyles.ButtonStyle))
-                Plugin.CullingOpt?.Apply();
+                Plugin.CullingOpt?.Reapply();
         }
 
         private void DrawParticlesTab()
@@ -398,7 +398,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用粒子设置", UIStyles.ButtonStyle))
-                Plugin.ParticleOpt?.Apply();
+                Plugin.ParticleOpt?.Reapply();
         }
 
         private void DrawLightingTab()
@@ -461,7 +461,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用灯光/雾效设置", UIStyles.ButtonStyle))
-                Plugin.LightingOpt?.Apply();
+                Plugin.LightingOpt?.Reapply();
         }
 
         private void DrawAudioTab()
@@ -492,7 +492,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用音频设置", UIStyles.ButtonStyle))
-                Plugin.AudioOpt?.Apply();
+                Plugin.AudioOpt?.Reapply();
         }
 
         private void DrawCameraTab()
@@ -531,7 +531,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             GUILayout.Space(10);
             if (GUILayout.Button("应用摄像头设置", UIStyles.ButtonStyle))
-                Plugin.CameraOpt?.Apply();
+                Plugin.CameraOpt?.Reapply();
         }
 
         private void DrawPresetsTab()
@@ -587,7 +587,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             if (GUILayout.Button("应用完整优化方案", UIStyles.ButtonStyle))
             {
                 Plugin.QualityOpt?.ApplyPreset("Performance");
-                Plugin.ApplyAllOptimizations();
+                Plugin.ReapplyAllOptimizations();
             }
             GUILayout.Space(3);
             GUILayout.Label("应用性能预设 + 全部优化模块", UIStyles.LabelStyle);

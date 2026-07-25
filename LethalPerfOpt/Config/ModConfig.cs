@@ -368,7 +368,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
                 "抗锯齿模式: None/FXAA/TAA/SMAA");
             HDRPBloomMode = configFile.Bind("HDRP", "HDRPBloomMode", "Vanilla",
                 "泛光效果: Vanilla/Disable");
-            FogMode = configFile.Bind("HDRP", "FogMode", "Vanilla",
+            FogMode = configFile.Bind("HDRP", "FogMode", "Disable",
                 "雾效模式: Vanilla/Hide/Disable/ForceDisable");
             HDRPShadowMode = configFile.Bind("HDRP", "HDRPShadowMode", "Vanilla",
                 "阴影渲染: Vanilla/Disable");

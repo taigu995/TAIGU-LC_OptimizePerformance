@@ -267,6 +267,21 @@ namespace TAIGU_LC_OptimizePerformance
             LogSource.LogInfo($"[{PluginName}] 全部优化已应用。");
         }
 
+        public static void ReapplyAllOptimizations()
+        {
+            LogSource.LogInfo($"[{PluginName}] 正在重新应用全部优化...");
+            if (ModConfig.EnableRenderOpt.Value) RenderOpt?.Reapply();
+            if (ModConfig.EnableMemoryOpt.Value) MemoryOpt?.Reapply();
+            if (ModConfig.EnablePhysicsOpt.Value) PhysicsOpt?.Reapply();
+            if (ModConfig.EnableCullingOpt.Value) CullingOpt?.Reapply();
+            QualityOpt?.Reapply();
+            if (ModConfig.EnableParticleOpt.Value) ParticleOpt?.Reapply();
+            if (ModConfig.EnableLightingOpt.Value) LightingOpt?.Reapply();
+            if (ModConfig.EnableAudioOpt.Value) AudioOpt?.Reapply();
+            if (ModConfig.EnableCameraOpt.Value) CameraOpt?.Reapply();
+            LogSource.LogInfo($"[{PluginName}] 全部优化已重新应用。");
+        }
+
         public static void RevertAllOptimizations()
         {
             LogSource.LogInfo($"[{PluginName}] 正在恢复全部默认...");

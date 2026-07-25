@@ -41,6 +41,12 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Physics] Physics optimizations applied");
         }
 
+        public void Reapply()
+        {
+            _isApplied = false;
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;
