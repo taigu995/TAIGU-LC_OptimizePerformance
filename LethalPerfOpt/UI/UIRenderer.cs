@@ -70,13 +70,15 @@ namespace TAIGU_LC_OptimizePerformance.UI
             // 每 300 帧输出一次诊断日志（约 5 秒）
             if (_frameCount % 300 == 0)
             {
-                Plugin.LogSource.LogInfo($"[TAIGU-UI] Update() 运行中... 帧={_frameCount}, OnGUI已调用={_onGUISinceCalled}");
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                Plugin.LogSource.LogInfo($"[TAIGU-UI] Update() 运行中... 帧={_frameCount}, OnGUI={_onGUISinceCalled}, KB={kb != null}, IsVisible={_perfUI?.IsVisible}");
             }
 
             if (!_updateCalled)
             {
                 _updateCalled = true;
-                Plugin.LogSource.LogInfo("[TAIGU-UI] Update() 首次被调用！");
+                var keyboardAvailable = UnityEngine.InputSystem.Keyboard.current != null;
+                Plugin.LogSource.LogInfo($"[TAIGU-UI] Update() 首次被调用！ Keyboard.current 可用: {keyboardAvailable}");
             }
 
             if (!_initialized || _perfUI == null) return;
