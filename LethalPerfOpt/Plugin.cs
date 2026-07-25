@@ -1,3 +1,4 @@
+using System;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -255,16 +256,29 @@ namespace TAIGU_LC_OptimizePerformance
         public static void ApplyAllOptimizations()
         {
             LogSource.LogInfo($"[{PluginName}] 正在应用全部优化...");
-            if (ModConfig.EnableRenderOpt.Value) RenderOpt?.Apply();
-            if (ModConfig.EnableMemoryOpt.Value) MemoryOpt?.Apply();
-            if (ModConfig.EnablePhysicsOpt.Value) PhysicsOpt?.Apply();
-            if (ModConfig.EnableCullingOpt.Value) CullingOpt?.Apply();
-            QualityOpt?.Apply();
-            if (ModConfig.EnableParticleOpt.Value) ParticleOpt?.Apply();
-            if (ModConfig.EnableLightingOpt.Value) LightingOpt?.Apply();
-            if (ModConfig.EnableAudioOpt.Value) AudioOpt?.Apply();
-            if (ModConfig.EnableCameraOpt.Value) CameraOpt?.Apply();
+            SafeApply("RenderOpt", () => RenderOpt?.Apply());
+            SafeApply("MemoryOpt", () => MemoryOpt?.Apply());
+            SafeApply("PhysicsOpt", () => PhysicsOpt?.Apply());
+            SafeApply("CullingOpt", () => CullingOpt?.Apply());
+            SafeApply("QualityOpt", () => QualityOpt?.Apply());
+            SafeApply("ParticleOpt", () => ParticleOpt?.Apply());
+            SafeApply("LightingOpt", () => LightingOpt?.Apply());
+            SafeApply("AudioOpt", () => AudioOpt?.Apply());
+            SafeApply("CameraOpt", () => CameraOpt?.Apply());
             LogSource.LogInfo($"[{PluginName}] 全部优化已应用。");
+        }
+
+        private static void SafeApply(string name, Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                LogSource.LogError($"[{PluginName}] {name} 应用失败: {ex.Message}");
+                LogSource.LogError($"[{PluginName}] 堆栈: {ex.StackTrace}");
+            }
         }
 
         public static void ReapplyAllOptimizations()
