@@ -7,22 +7,19 @@ using TAIGU_LC_OptimizePerformance.Config;
 namespace TAIGU_LC_OptimizePerformance.Patches
 {
     /// <summary>
-    /// 游戏核心补丁。
+    /// 游戏核心补丁 - 使用显式 Harmony.Patch() 模式
     /// 整合 LethalSponge 的关键补丁：
     /// - StartOfRound.Start: 初始化摄像头、应用灯光优化
     /// - StartOfRound.PassTimeToNextDay: 每日资源清理
     /// - RoundManager.FinishGeneratingLevel: 关卡生成后优化
     /// - FoliageDetailDistance: 修复植被 LOD 材质泄漏
     /// </summary>
-    [HarmonyPatch(typeof(StartOfRound))]
-    public class GamePatches
+    public static class GamePatches
     {
         /// <summary>
         /// 游戏回合开始时调用 - 初始化摄像头、应用灯光优化
         /// 参考 LethalSponge 的 StartOfRoundSpongePatch.StartOfRound_Start
         /// </summary>
-        [HarmonyPatch("Start")]
-        [HarmonyPostfix]
         private static void StartOfRound_Start(ref StartOfRound __instance)
         {
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Patches] StartOfRound.Start 补丁触发");
@@ -44,9 +41,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
         /// 每日时间切换时调用 - 执行资源清理
         /// 参考 LethalSponge 的 StartOfRoundSpongePatch.StartOfRound_PassTimeToNextDay
         /// </summary>
-        [HarmonyPatch("PassTimeToNextDay")]
-        [HarmonyPostfix]
-        private static void StartOfRound_PassTimeToNextDay(ref StartOfRound __instance)
+        private static void StartOfRound_PassTimeToNextDay()
         {
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Patches] 每日清理触发");
 
@@ -56,18 +51,12 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                 Plugin.MemoryOpt.OnDayPassed();
             }
         }
-    }
 
-    /// <summary>
-    /// 关卡生成完成补丁
-    /// 参考 LethalSponge 的 RoundManagerSpongePatch
-    /// </summary>
-    [HarmonyPatch(typeof(RoundManager))]
-    public class RoundManagerPatches
-    {
-        [HarmonyPatch("FinishGeneratingLevel")]
-        [HarmonyPostfix]
-        private static void RoundManager_FinishGeneratingLevel(ref RoundManager __instance)
+        /// <summary>
+        /// 关卡生成完成补丁
+        /// 参考 LethalSponge 的 RoundManagerSpongePatch
+        /// </summary>
+        private static void RoundManager_FinishGeneratingLevel()
         {
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Patches] 关卡生成完成，应用优化...");
 
@@ -77,19 +66,13 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                 Plugin.LightingOpt.UpdateAllLights();
             }
         }
-    }
 
-    /// <summary>
-    /// 植被 LOD 修复补丁 - 修复材质泄漏
-    /// 参考 LethalSponge 的 FoliageDetailDistanceSpongePatch
-    /// 简化版本：禁用原始 Update 方法，使用距离检查替代
-    /// </summary>
-    [HarmonyPatch(typeof(FoliageDetailDistance))]
-    public class FoliageDetailDistancePatch
-    {
-        [HarmonyPatch("Update")]
-        [HarmonyPrefix]
-        private static bool FoliageDetailDistance_Update(ref FoliageDetailDistance __instance)
+        /// <summary>
+        /// 植被 LOD 修复补丁 - 修复材质泄漏
+        /// 参考 LethalSponge 的 FoliageDetailDistanceSpongePatch
+        /// 简化版本：禁用原始 Update 方法，使用距离检查替代
+        /// </summary>
+        private static bool FoliageDetailDistance_Update()
         {
             if (!ModConfig.FixFoliageLOD.Value) return true;
 
@@ -97,17 +80,11 @@ namespace TAIGU_LC_OptimizePerformance.Patches
             // 植被 LOD 切换由引擎自动处理，无需手动干预
             return false;
         }
-    }
 
-    /// <summary>
-    /// 监控摄像头渲染优化补丁
-    /// 参考 LethalSponge 的 ManualCameraRendererSpongePatch
-    /// </summary>
-    [HarmonyPatch(typeof(ManualCameraRenderer))]
-    public class ManualCameraRendererPatch
-    {
-        [HarmonyPatch("Update")]
-        [HarmonyPostfix]
+        /// <summary>
+        /// 监控摄像头渲染优化补丁
+        /// 参考 LethalSponge 的 ManualCameraRendererSpongePatch
+        /// </summary>
         private static void ManualCameraRenderer_Update(ref ManualCameraRenderer __instance)
         {
             if (!ModConfig.PatchCameraScript.Value) return;
@@ -133,7 +110,6 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                     // 应用帧率限制
                     if (__instance.renderAtLowerFramerate)
                     {
-                        // 使用 CameraOptimizer 的帧率控制
                         if (Plugin.CameraOpt != null)
                         {
                             Plugin.CameraOpt.Update();
@@ -148,10 +124,11 @@ namespace TAIGU_LC_OptimizePerformance.Patches
             catch { }
         }
 
-        [HarmonyPatch("MeetsCameraEnabledConditions")]
-        [HarmonyPostfix]
+        /// <summary>
+        /// 摄像头启用条件补丁
+        /// </summary>
         private static void ManualCameraRenderer_MeetsCameraEnabledConditions(
-            ref ManualCameraRenderer __instance, ref bool __result, PlayerControllerB player)
+            ref ManualCameraRenderer __instance, bool __result, PlayerControllerB player)
         {
             if (!ModConfig.PatchCameraScript.Value) return;
 
