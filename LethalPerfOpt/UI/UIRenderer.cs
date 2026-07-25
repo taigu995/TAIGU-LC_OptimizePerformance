@@ -21,6 +21,11 @@ namespace TAIGU_LC_OptimizePerformance.UI
         private bool _onGUISinceCalled;
         private int _frameCount;
 
+        // 光标状态保存/恢复
+        private CursorLockMode _savedCursorState;
+        private bool _savedCursorVisible;
+        private bool _cursorStateSaved;
+
         public static UIRenderer Instance => _instance;
 
         /// <summary>
@@ -92,6 +97,25 @@ namespace TAIGU_LC_OptimizePerformance.UI
                     {
                         _perfUI.IsVisible = !_perfUI.IsVisible;
                         Plugin.LogSource.LogInfo($"[TAIGU-UI] UI 切换: {_perfUI.IsVisible}");
+
+                        if (_perfUI.IsVisible)
+                        {
+                            // 显示 UI 时保存光标状态并解锁
+                            _savedCursorState = Cursor.lockState;
+                            _savedCursorVisible = Cursor.visible;
+                            _cursorStateSaved = true;
+                            Cursor.lockState = CursorLockMode.None;
+                            Cursor.visible = true;
+                        }
+                        else
+                        {
+                            // 隐藏 UI 时恢复光标状态
+                            if (_cursorStateSaved)
+                            {
+                                Cursor.lockState = _savedCursorState;
+                                Cursor.visible = _savedCursorVisible;
+                            }
+                        }
                     }
 
                     if (keyboard.f6Key.wasPressedThisFrame)
@@ -105,15 +129,16 @@ namespace TAIGU_LC_OptimizePerformance.UI
             {
                 Plugin.LogSource.LogError($"[TAIGU-UI] 按键检测异常: {ex.Message}");
             }
+        }
 
-            // 处理光标状态 - UI 显示时解锁光标，方便操作
+        private void LateUpdate()
+        {
+            // LateUpdate 在所有 Update 之后执行，覆盖游戏每帧的光标锁定
+            // 确保 UI 显示时光标始终可用，支持拖动和点击
             if (_perfUI != null && _perfUI.IsVisible)
             {
-                if (Cursor.lockState == CursorLockMode.Locked)
-                {
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
         }
 
