@@ -16,6 +16,11 @@ namespace TAIGU_LC_OptimizePerformance.UI
         private bool _initialized;
         private int _frameCount;
 
+        // 光标状态保存
+        private CursorLockMode _savedLockState = CursorLockMode.Locked;
+        private bool _savedVisible = false;
+        private bool _cursorStateSaved = false;
+
         // 诊断
         private bool _updateCalled;
         private bool _onGUICalled;
@@ -73,9 +78,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             // 使用 Input System 检测 F5 键
             if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.f5Key.wasPressedThisFrame)
             {
-                _isVisible = !_isVisible;
-                _perfUI.IsVisible = _isVisible;
-                Plugin.LogSource.LogInfo($"[TAIGU-UI] F5 切换 UI: {_isVisible}");
+                ToggleUI();
             }
 
             // 使用 Input System 检测 F6 键 (切换 FPS 显示)
@@ -86,25 +89,68 @@ namespace TAIGU_LC_OptimizePerformance.UI
             }
 
             // 每帧管理光标状态
-            // 当 UI 可见时，强制解锁光标以支持拖动
-            if (_isVisible)
-            {
-                // 强制解锁光标 - 让玩家可以拖动 UI 窗口
-                if (Cursor.lockState != CursorLockMode.None || !Cursor.visible)
-                {
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-            }
+            UpdateCursorState();
         }
 
         private void LateUpdate()
         {
-            // LateUpdate 每帧重新强制光标状态（因为游戏自己的 Update 会重新锁定光标）
+            // LateUpdate 再次强制光标状态（游戏可能在自己的 Update 中重新锁定）
+            UpdateCursorState();
+        }
+
+        /// <summary>
+        /// 切换 UI 显示状态
+        /// </summary>
+        private void ToggleUI()
+        {
+            _isVisible = !_isVisible;
+            _perfUI.IsVisible = _isVisible;
+
             if (_isVisible)
             {
+                // 显示 UI：保存当前光标状态，然后解锁
+                if (!_cursorStateSaved)
+                {
+                    _savedLockState = Cursor.lockState;
+                    _savedVisible = Cursor.visible;
+                    _cursorStateSaved = true;
+                    Plugin.LogSource.LogInfo($"[TAIGU-UI] 保存光标状态: lockState={_savedLockState}, visible={_savedVisible}");
+                }
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
+            }
+            else
+            {
+                // 隐藏 UI：恢复保存的光标状态
+                if (_cursorStateSaved)
+                {
+                    Cursor.lockState = _savedLockState;
+                    Cursor.visible = _savedVisible;
+                    _cursorStateSaved = false;
+                    Plugin.LogSource.LogInfo($"[TAIGU-UI] 恢复光标状态: lockState={_savedLockState}, visible={_savedVisible}");
+                }
+            }
+
+            Plugin.LogSource.LogInfo($"[TAIGU-UI] F5 切换 UI: {_isVisible}");
+        }
+
+        /// <summary>
+        /// 更新光标状态：UI 可见时强制解锁，隐藏时由游戏控制
+        /// </summary>
+        private void UpdateCursorState()
+        {
+            if (_isVisible)
+            {
+                // 强制解锁光标 - 让玩家可以拖动 UI 窗口
+                if (Cursor.lockState != CursorLockMode.None && Cursor.visible)
+                {
+                    // 光标已经被解锁，无需操作
+                }
+                else
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
             }
         }
 
@@ -120,6 +166,10 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             if (_isVisible)
             {
+                // OnGUI 中再次强制解锁光标（确保 IMGUI 事件能正确处理鼠标）
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+
                 _perfUI.OnGUI();
             }
         }

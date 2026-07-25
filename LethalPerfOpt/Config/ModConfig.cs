@@ -177,7 +177,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
             MaxCubeReflectionProbes = file.Bind("HDRP", "MaxCubeReflectionProbes", 32, new ConfigDescription("最大立方体反射探针数", new AcceptableValueRange<int>(0, 128)));
             MaxPlanarReflectionProbes = file.Bind("HDRP", "MaxPlanarReflectionProbes", 8, new ConfigDescription("最大平面反射探针数", new AcceptableValueRange<int>(0, 32)));
             FogBudget = file.Bind("HDRP", "FogBudget", 0.33f, new ConfigDescription("雾效预算 (0=禁用, 1=完全)", new AcceptableValueRange<float>(0f, 1f)));
-            DeferredOnly = file.Bind("HDRP", "DeferredOnly", true, "仅使用延迟渲染");
+            DeferredOnly = file.Bind("HDRP", "DeferredOnly", false, "仅使用延迟渲染（可能导致画面异常，建议关闭）");
 
             // ===== 后处理效果开关 (来自 LethalSponge) =====
             DisableDOF = file.Bind("后处理", "DisableDOF", true, "禁用景深");
@@ -306,7 +306,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
             MaxCubeReflectionProbes.Value = 32;
             MaxPlanarReflectionProbes.Value = 8;
             FogBudget.Value = 0.33f;
-            DeferredOnly.Value = true;
+            DeferredOnly.Value = false;
 
             // 后处理
             DisableDOF.Value = true;

@@ -64,6 +64,7 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
         private void UpdateModConfigFromPreset(string preset)
         {
             // Update ModConfig values so UI sliders reflect the preset changes
+            ModConfig.QualityPreset.Value = preset;
             switch (preset)
             {
                 case "Ultra":
