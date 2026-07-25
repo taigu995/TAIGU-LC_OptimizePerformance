@@ -20,6 +20,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
         private static GUIStyle _goodStyle;
         private static GUIStyle _warnStyle;
         private static GUIStyle _badStyle;
+        private static GUIStyle _tooltipStyle;
         private static Texture2D _backgroundTexture;
         private static bool _initialized;
 
@@ -98,6 +99,16 @@ namespace TAIGU_LC_OptimizePerformance.UI
             _badStyle = new GUIStyle(_labelStyle);
             _badStyle.normal.textColor = new Color(1.0f, 0.3f, 0.3f);
 
+            // Tooltip style
+            _tooltipStyle = new GUIStyle(GUI.skin.box);
+            _tooltipStyle.fontSize = 11;
+            _tooltipStyle.normal.textColor = new Color(0.7f, 0.9f, 1.0f);
+            _tooltipStyle.normal.background = _backgroundTexture;
+            _tooltipStyle.alignment = TextAnchor.MiddleLeft;
+            _tooltipStyle.wordWrap = true;
+            _tooltipStyle.padding = new RectOffset(8, 8, 4, 4);
+            _tooltipStyle.margin = new RectOffset(4, 4, 0, 0);
+
             _initialized = true;
         }
 
@@ -113,6 +124,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
         public static GUIStyle GoodStyle => _goodStyle;
         public static GUIStyle WarnStyle => _warnStyle;
         public static GUIStyle BadStyle => _badStyle;
+        public static GUIStyle TooltipStyle => _tooltipStyle;
 
         public static GUIStyle GetFPSStyle(float fps)
         {
