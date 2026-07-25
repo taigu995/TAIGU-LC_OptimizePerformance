@@ -1,169 +1,140 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 using TAIGU_LC_OptimizePerformance.Config;
 
 namespace TAIGU_LC_OptimizePerformance.Optimizers
 {
     /// <summary>
-    /// Lighting optimization module.
-    /// Consolidates optimizations from LightsOut and general Unity lighting optimization.
-    /// Features: Dynamic light distance culling, light count limiting, shadow cascade tuning,
-    /// ship lamp optimization.
+    /// 灯光优化模块。
+    /// 整合 LethalSponge 的 LightService 优化：
+    /// - 灯光淡入距离控制
+    /// - 体积光距离乘数/上限
+    /// - 灯光强度调节
+    /// - 灯光雾效距离控制
     /// </summary>
     public class LightingOptimizer
     {
         private bool _isApplied;
-        private float _lastUpdateTime;
-        private const float UPDATE_INTERVAL = 0.2f;
+        public bool IsApplied => _isApplied;
+        private readonly List<(Light light, float originalIntensity)> _modifiedLights
+            = new List<(Light, float)>();
+        private readonly List<(LocalVolumetricFog fog, float originalDistance)> _modifiedFogs
+            = new List<(LocalVolumetricFog, float)>();
+
+        public int ModifiedLightsCount => _modifiedLights.Count;
+        public int ModifiedFogsCount => _modifiedFogs.Count;
 
         public void Apply()
         {
             if (_isApplied) return;
 
+            UpdateAllLights();
+            UpdateAllFogs();
+
             _isApplied = true;
-            _lastUpdateTime = 0f;
-
-            // Apply shadow cascade settings
-            ApplyShadowCascades();
-
-            Plugin.LogSource.LogInfo("[LethalPerfOpt:Lighting] Lighting optimizations applied");
+            Plugin.LogSource.LogInfo($"[LethalPerfOpt:Lighting] 灯光优化已应用 - 修改灯光:{_modifiedLights.Count} 修改雾效:{_modifiedFogs.Count}");
         }
 
         public void Revert()
         {
             if (!_isApplied) return;
 
-            // Re-enable all lights
-            EnableAllLights();
+            // 恢复灯光强度
+            foreach (var (light, originalIntensity) in _modifiedLights)
+            {
+                if (light != null)
+                {
+                    light.intensity = originalIntensity;
+                }
+            }
+            _modifiedLights.Clear();
+
+            // 恢复雾效距离
+            foreach (var (fog, originalDistance) in _modifiedFogs)
+            {
+                if (fog != null)
+                {
+                    fog.parameters.meanFreePath = originalDistance;
+                }
+            }
+            _modifiedFogs.Clear();
 
             _isApplied = false;
-            Plugin.LogSource.LogInfo("[LethalPerfOpt:Lighting] Lighting optimizations reverted");
+            Plugin.LogSource.LogInfo("[LethalPerfOpt:Lighting] 灯光优化已恢复");
         }
 
-        public void Update()
+        /// <summary>
+        /// 更新所有灯光（参考 LethalSponge 的 LightService.UpdateAllLights）
+        /// </summary>
+        public void UpdateAllLights()
         {
-            if (!_isApplied) return;
+            _modifiedLights.Clear();
 
-            float currentTime = Time.realtimeSinceStartup;
-            if (currentTime - _lastUpdateTime < UPDATE_INTERVAL) return;
+            float intensityMult = ModConfig.LightIntensityMultiplier.Value;
+            float fadeDistanceMult = ModConfig.LightFadeDistanceMultiplier.Value;
 
-            _lastUpdateTime = currentTime;
-
-            // Perform light culling
-            PerformLightCulling();
-
-            // Disable dynamic shadows if configured
-            if (ModConfig.DisableDynamicShadows.Value)
+            var allLights = Resources.FindObjectsOfTypeAll<Light>();
+            foreach (var light in allLights)
             {
-                DisableDynamicShadows();
-            }
-        }
+                if (light == null) continue;
 
-        private void ApplyShadowCascades()
-        {
-            int cascades = ModConfig.ShadowCascades.Value;
+                // 记录原始强度
+                _modifiedLights.Add((light, light.intensity));
 
-            // Set shadow cascades through QualitySettings
-            switch (cascades)
-            {
-                case 1:
-                    QualitySettings.shadowCascades = 1;
-                    break;
-                case 2:
-                    QualitySettings.shadowCascades = 2;
-                    break;
-                case 3:
-                    QualitySettings.shadowCascades = 4; // Unity only supports 1, 2, or 4
-                    break;
-                case 4:
-                    QualitySettings.shadowCascades = 4;
-                    break;
-                default:
-                    QualitySettings.shadowCascades = 2;
-                    break;
-            }
-        }
-
-        private void PerformLightCulling()
-        {
-            Camera mainCam = Camera.main;
-            if (mainCam == null) return;
-
-            Vector3 camPos = mainCam.transform.position;
-            float cullDist = ModConfig.LightCullingDistance.Value;
-            int maxLights = ModConfig.MaxDynamicLights.Value;
-
-            var lights = Object.FindObjectsOfType<Light>();
-            int activeCount = 0;
-
-            // Sort lights by distance to camera (closest first)
-            System.Array.Sort(lights, (a, b) =>
-            {
-                if (a == null || b == null) return 0;
-                float distA = Vector3.Distance(camPos, a.transform.position);
-                float distB = Vector3.Distance(camPos, b.transform.position);
-                return distA.CompareTo(distB);
-            });
-
-            foreach (var light in lights)
-            {
-                if (light == null || light.gameObject == null) continue;
-
-                // Skip directional lights (sun) - always keep active
-                if (light.type == LightType.Directional)
+                // 调整灯光强度
+                if (intensityMult != 1.0f)
                 {
-                    light.enabled = true;
-                    continue;
+                    light.intensity *= intensityMult;
                 }
 
-                float distance = Vector3.Distance(camPos, light.transform.position);
-
-                if (distance > cullDist || activeCount >= maxLights)
+                // 调整灯光范围（淡入距离）
+                if (fadeDistanceMult != 1.0f)
                 {
-                    light.enabled = false;
+                    light.range *= fadeDistanceMult;
                 }
-                else
-                {
-                    light.enabled = true;
-                    activeCount++;
 
-                    // Reduce light range for performance at distance
-                    if (distance > cullDist * 0.6f)
+                // 调整 HD 额外灯光设置
+                var hdAdditionalLight = light.GetComponent<HDAdditionalLightData>();
+                if (hdAdditionalLight != null)
+                {
+                    if (ModConfig.DisableLightShadows.Value)
                     {
-                        light.shadows = LightShadows.None;
+                        hdAdditionalLight.SetShadowDimmer(0f);
                     }
                 }
             }
         }
 
-        private void DisableDynamicShadows()
+        /// <summary>
+        /// 更新所有体积雾（参考 LethalSponge 的 FogModifier）
+        /// </summary>
+        private void UpdateAllFogs()
         {
-            var lights = Object.FindObjectsOfType<Light>();
+            _modifiedFogs.Clear();
 
-            foreach (var light in lights)
+            float fogDistMult = ModConfig.VolumetricFogDistanceMultiplier.Value;
+            float fogDistCap = ModConfig.VolumetricFogDistanceCap.Value;
+
+            var allFogs = Resources.FindObjectsOfTypeAll<LocalVolumetricFog>();
+            foreach (var fog in allFogs)
             {
-                if (light == null) continue;
+                if (fog == null) continue;
 
-                // Only disable shadows for non-directional lights
-                if (light.type != LightType.Directional)
+                float origDistance = fog.parameters.meanFreePath;
+                _modifiedFogs.Add((fog, origDistance));
+
+                if (fogDistMult != 1.0f)
                 {
-                    light.shadows = LightShadows.None;
+                    float newDistance = origDistance * fogDistMult;
+                    if (fogDistCap > 0)
+                    {
+                        newDistance = Mathf.Min(newDistance, fogDistCap);
+                    }
+                    fog.parameters.meanFreePath = newDistance;
                 }
             }
         }
-
-        private void EnableAllLights()
-        {
-            var lights = Object.FindObjectsOfType<Light>();
-
-            foreach (var light in lights)
-            {
-                if (light != null)
-                {
-                    light.enabled = true;
-                }
-            }
-        }
-
-        public bool IsApplied => _isApplied;
     }
 }

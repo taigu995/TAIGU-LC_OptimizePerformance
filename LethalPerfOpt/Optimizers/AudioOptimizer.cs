@@ -1,149 +1,115 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using TAIGU_LC_OptimizePerformance.Config;
 
 namespace TAIGU_LC_OptimizePerformance.Optimizers
 {
     /// <summary>
-    /// Audio optimization module.
-    /// Features: Distance-based audio culling, max audio source limiting, reverb control.
+    /// 音频优化模块。
+    /// 整合 LethalSponge 的 AudioService 优化：
+    /// - 音频去重（相同名称的 AudioClip 共享引用）
+    /// - 音频源距离衰减优化
+    /// - 音频更新频率控制
     /// </summary>
     public class AudioOptimizer
     {
         private bool _isApplied;
-        private float _lastUpdateTime;
-        private const float UPDATE_INTERVAL = 0.25f;
+        public bool IsApplied => _isApplied;
+        private int _dedupedCount;
+
+        public int DedupedCount => _dedupedCount;
 
         public void Apply()
         {
             if (_isApplied) return;
 
-            _isApplied = true;
-            _lastUpdateTime = 0f;
-
-            // Disable reverb if configured
-            if (ModConfig.DisableReverb.Value)
+            // 去重音频
+            if (ModConfig.EnableAudioDedup.Value)
             {
-                DisableReverb();
+                _dedupedCount = DeduplicateAudio();
             }
 
-            // Set audio listener settings
-            AudioListener.pause = false;
+            // 优化音频源设置
+            OptimizeAudioSources();
 
-            Plugin.LogSource.LogInfo("[LethalPerfOpt:Audio] Audio optimizations applied");
+            _isApplied = true;
+            Plugin.LogSource.LogInfo($"[LethalPerfOpt:Audio] 音频优化已应用 - 去重:{_dedupedCount}");
         }
 
         public void Revert()
         {
             if (!_isApplied) return;
 
-            // Re-enable all audio sources
-            EnableAllAudio();
-
             _isApplied = false;
-            Plugin.LogSource.LogInfo("[LethalPerfOpt:Audio] Audio optimizations reverted");
+            Plugin.LogSource.LogInfo("[LethalPerfOpt:Audio] 音频优化已恢复");
         }
 
-        public void Update()
+        /// <summary>
+        /// 音频去重（参考 LethalSponge 的 AudioService.DedupeAllAudio）
+        /// </summary>
+        private int DeduplicateAudio()
         {
-            if (!_isApplied) return;
+            int count = 0;
+            var audioDict = new Dictionary<string, AudioClip>();
 
-            float currentTime = Time.realtimeSinceStartup;
-            if (currentTime - _lastUpdateTime < UPDATE_INTERVAL) return;
-
-            _lastUpdateTime = currentTime;
-
-            // Perform audio culling
-            PerformAudioCulling();
-        }
-
-        private void PerformAudioCulling()
-        {
-            Camera mainCam = Camera.main;
-            if (mainCam == null) return;
-
-            Vector3 camPos = mainCam.transform.position;
-            float cullDist = ModConfig.AudioCullingDistance.Value;
-            int maxSources = ModConfig.MaxAudioSources.Value;
-
-            var audioSources = Object.FindObjectsOfType<AudioSource>();
-            int activeCount = 0;
-
-            // Sort by distance
-            System.Array.Sort(audioSources, (a, b) =>
+            // 处理所有 AudioSource
+            var allAudioSources = Resources.FindObjectsOfTypeAll<AudioSource>();
+            foreach (var audioSource in allAudioSources)
             {
-                if (a == null || b == null) return 0;
-                float distA = Vector3.Distance(camPos, a.transform.position);
-                float distB = Vector3.Distance(camPos, b.transform.position);
-                return distA.CompareTo(distB);
-            });
+                if (audioSource == null || audioSource.clip == null) continue;
 
-            foreach (var source in audioSources)
-            {
-                if (source == null || source.gameObject == null) continue;
-
-                // Always keep player audio active
-                if (source.gameObject.GetComponent<GameNetcodeStuff.PlayerControllerB>() != null)
+                string clipName = audioSource.clip.name;
+                if (audioDict.TryGetValue(clipName, out AudioClip original))
                 {
-                    source.priority = 0; // Highest priority
-                    continue;
-                }
-
-                float distance = Vector3.Distance(camPos, source.transform.position);
-
-                if (distance > cullDist || activeCount >= maxSources)
-                {
-                    if (source.isPlaying)
+                    if (audioSource.clip != original)
                     {
-                        source.Pause();
+                        audioSource.clip = original;
+                        count++;
                     }
                 }
                 else
                 {
-                    activeCount++;
-
-                    // Adjust volume based on distance
-                    float normalizedDist = distance / cullDist;
-                    source.volume = Mathf.Clamp01(1.0f - normalizedDist * 0.5f);
+                    audioDict[clipName] = audioSource.clip;
                 }
             }
+
+            return count;
         }
 
-        private void DisableReverb()
+        /// <summary>
+        /// 优化音频源设置
+        /// </summary>
+        private void OptimizeAudioSources()
         {
-            AudioReverbZone[] reverbZones = Object.FindObjectsOfType<AudioReverbZone>();
-            foreach (var zone in reverbZones)
+            var allAudioSources = Resources.FindObjectsOfTypeAll<AudioSource>();
+            int optimized = 0;
+
+            foreach (var audioSource in allAudioSources)
             {
-                if (zone != null)
+                if (audioSource == null) continue;
+
+                // 禁用不必要的音频源
+                if (ModConfig.DisableDistantAudio.Value)
                 {
-                    zone.enabled = false;
+                    if (audioSource.maxDistance < ModConfig.DistantAudioThreshold.Value)
+                    {
+                        audioSource.enabled = false;
+                        optimized++;
+                    }
+                }
+
+                // 降低音频更新频率
+                if (ModConfig.ReduceAudioUpdateRate.Value)
+                {
+                    audioSource.spatialBlend = 0f; // 转为 2D 音频减少空间计算
                 }
             }
 
-            AudioListener.volume = 1.0f;
-        }
-
-        private void EnableAllAudio()
-        {
-            var audioSources = Object.FindObjectsOfType<AudioSource>();
-            foreach (var source in audioSources)
+            if (optimized > 0)
             {
-                if (source != null && !source.isPlaying && source.gameObject.activeSelf)
-                {
-                    source.UnPause();
-                }
-            }
-
-            // Re-enable reverb zones
-            AudioReverbZone[] reverbZones = Object.FindObjectsOfType<AudioReverbZone>();
-            foreach (var zone in reverbZones)
-            {
-                if (zone != null)
-                {
-                    zone.enabled = true;
-                }
+                Plugin.LogSource.LogInfo($"[LethalPerfOpt:Audio] 优化音频源: {optimized} 个");
             }
         }
-
-        public bool IsApplied => _isApplied;
     }
 }

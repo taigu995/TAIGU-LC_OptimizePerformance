@@ -20,7 +20,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
         private readonly string[] _tabNames = new string[]
         {
             "概览", "渲染", "内存", "物理", "遮挡剔除",
-            "粒子", "灯光", "音频", "预设"
+            "粒子", "灯光", "音频", "摄像头", "预设"
         };
 
         public PerformanceUI()
@@ -78,7 +78,8 @@ namespace TAIGU_LC_OptimizePerformance.UI
                 case 5: DrawParticlesTab(); break;
                 case 6: DrawLightingTab(); break;
                 case 7: DrawAudioTab(); break;
-                case 8: DrawPresetsTab(); break;
+                case 8: DrawCameraTab(); break;
+                case 9: DrawPresetsTab(); break;
             }
 
             GUILayout.EndScrollView();
@@ -161,6 +162,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
             DrawModuleStatus("粒子", Plugin.ParticleOpt?.IsApplied ?? false);
             DrawModuleStatus("灯光", Plugin.LightingOpt?.IsApplied ?? false);
             DrawModuleStatus("音频", Plugin.AudioOpt?.IsApplied ?? false);
+            DrawModuleStatus("摄像头", Plugin.CameraOpt?.IsApplied ?? false);
 
             GUILayout.Space(5);
             GUILayout.BeginHorizontal();
@@ -466,6 +468,45 @@ namespace TAIGU_LC_OptimizePerformance.UI
             GUILayout.Space(10);
             if (GUILayout.Button("应用音频设置", UIStyles.ButtonStyle))
                 Plugin.AudioOpt?.Apply();
+        }
+
+        private void DrawCameraTab()
+        {
+            GUILayout.Label("摄像头优化 (LethalSponge 风格)", UIStyles.SectionHeaderStyle);
+            GUILayout.Space(5);
+
+            ModConfig.EnableCameraOpt.Value = GUILayout.Toggle(
+                ModConfig.EnableCameraOpt.Value, "启用摄像头优化", UIStyles.ToggleStyle);
+
+            GUILayout.Space(5);
+            GUILayout.Label("--- 飞船摄像头 ---", UIStyles.SectionHeaderStyle);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("飞船摄像头帧率:", UIStyles.LabelStyle, GUILayout.Width(160));
+            ModConfig.ShipCameraFramerate.Value = (int)GUILayout.HorizontalSlider(
+                ModConfig.ShipCameraFramerate.Value, 0, 60);
+            GUILayout.Label($"{ModConfig.ShipCameraFramerate.Value}", UIStyles.LabelStyle, GUILayout.Width(50));
+            GUILayout.EndHorizontal();
+
+            ModConfig.DisableTransparentShipCamera.Value = GUILayout.Toggle(
+                ModConfig.DisableTransparentShipCamera.Value, "禁用飞船摄像头透明渲染", UIStyles.ToggleStyle);
+
+            GUILayout.Space(5);
+            GUILayout.Label("--- 地图/监视摄像头 ---", UIStyles.SectionHeaderStyle);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("地图摄像头帧率:", UIStyles.LabelStyle, GUILayout.Width(160));
+            ModConfig.MapCameraFramerate.Value = (int)GUILayout.HorizontalSlider(
+                ModConfig.MapCameraFramerate.Value, 0, 60);
+            GUILayout.Label($"{ModConfig.MapCameraFramerate.Value}", UIStyles.LabelStyle, GUILayout.Width(50));
+            GUILayout.EndHorizontal();
+
+            ModConfig.DisableTransparentMapCamera.Value = GUILayout.Toggle(
+                ModConfig.DisableTransparentMapCamera.Value, "禁用地图摄像头透明渲染", UIStyles.ToggleStyle);
+
+            GUILayout.Space(10);
+            if (GUILayout.Button("应用摄像头设置", UIStyles.ButtonStyle))
+                Plugin.CameraOpt?.Apply();
         }
 
         private void DrawPresetsTab()

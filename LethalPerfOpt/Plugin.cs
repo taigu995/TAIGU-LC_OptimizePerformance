@@ -29,6 +29,7 @@ namespace TAIGU_LC_OptimizePerformance
         internal static ParticleOptimizer ParticleOpt;
         internal static LightingOptimizer LightingOpt;
         internal static AudioOptimizer AudioOpt;
+        internal static CameraOptimizer CameraOpt;
         internal static PerformanceMonitor PerfMonitor;
         internal static PerformanceUI PerfUI;
 
@@ -53,11 +54,11 @@ namespace TAIGU_LC_OptimizePerformance
             ParticleOpt = new ParticleOptimizer();
             LightingOpt = new LightingOptimizer();
             AudioOpt = new AudioOptimizer();
+            CameraOpt = new CameraOptimizer();
             PerfMonitor = new PerformanceMonitor();
             PerfUI = new PerformanceUI();
 
             // 创建独立的 UIRenderer 组件来渲染 UI
-            // 这是解决 BaseUnityPlugin 的 OnGUI() 不被 Unity 调用的关键
             var uiRenderer = gameObject.AddComponent<UIRenderer>();
             uiRenderer.Initialize(PerfUI);
 
@@ -104,6 +105,9 @@ namespace TAIGU_LC_OptimizePerformance
             if (ModConfig.EnableAudioOpt.Value)
                 AudioOpt.Apply();
 
+            if (ModConfig.EnableCameraOpt.Value)
+                CameraOpt.Apply();
+
             LogSource.LogInfo($"[{PluginName}] 全部优化已应用！");
         }
 
@@ -118,6 +122,7 @@ namespace TAIGU_LC_OptimizePerformance
             ParticleOpt.Revert();
             LightingOpt.Revert();
             AudioOpt.Revert();
+            CameraOpt.Revert();
 
             LogSource.LogInfo($"[{PluginName}] 全部优化已恢复！");
         }
