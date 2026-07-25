@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = TAIGU_LC_OptimizePerformance
+build_property.ProjectDir = /workspace/projects/LethalPerfOpt/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

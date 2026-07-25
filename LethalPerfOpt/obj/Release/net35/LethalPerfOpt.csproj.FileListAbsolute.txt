@@ -1,0 +1,4 @@
+/workspace/projects/LethalPerfOpt/obj/Release/net35/LethalPerfOpt.csproj.AssemblyReference.cache
+/workspace/projects/LethalPerfOpt/obj/Release/net35/LethalPerfOpt.GeneratedMSBuildEditorConfig.editorconfig
+/workspace/projects/LethalPerfOpt/obj/Release/net35/LethalPerfOpt.csproj.CoreCompileInputs.cache
+/workspace/projects/LethalPerfOpt/obj/Release/net35/LethalPerfOpt.sourcelink.json
