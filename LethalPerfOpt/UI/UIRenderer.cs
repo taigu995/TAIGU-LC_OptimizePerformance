@@ -25,6 +25,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
         private CursorLockMode _savedCursorState;
         private bool _savedCursorVisible;
         private bool _cursorStateSaved;
+        private bool _wasUIVisible;
 
         public static UIRenderer Instance => _instance;
 
@@ -106,12 +107,14 @@ namespace TAIGU_LC_OptimizePerformance.UI
                             _savedCursorState = Cursor.lockState;
                             _savedCursorVisible = Cursor.visible;
                             _cursorStateSaved = true;
+                            _wasUIVisible = true;
                             Cursor.lockState = CursorLockMode.None;
                             Cursor.visible = true;
                         }
                         else
                         {
                             // 隐藏 UI 时恢复光标状态
+                            _wasUIVisible = false;
                             if (_cursorStateSaved)
                             {
                                 Cursor.lockState = _savedCursorState;
@@ -137,10 +140,28 @@ namespace TAIGU_LC_OptimizePerformance.UI
         {
             // LateUpdate 在所有 Update 之后执行，覆盖游戏每帧的光标锁定
             // 确保 UI 显示时光标始终可用，支持拖动和点击
-            if (_perfUI != null && _perfUI.IsVisible)
+            if (_perfUI != null)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
+                if (_perfUI.IsVisible)
+                {
+                    // UI 显示时强制解锁光标
+                    if (Cursor.lockState != CursorLockMode.None)
+                    {
+                        Cursor.lockState = CursorLockMode.None;
+                    }
+                    if (!Cursor.visible)
+                    {
+                        Cursor.visible = true;
+                    }
+                    _wasUIVisible = true;
+                }
+                else if (_wasUIVisible && _cursorStateSaved)
+                {
+                    // UI 刚从可见变为隐藏时，恢复光标状态
+                    _wasUIVisible = false;
+                    Cursor.lockState = _savedCursorState;
+                    Cursor.visible = _savedCursorVisible;
+                }
             }
         }
 
@@ -183,39 +204,25 @@ namespace TAIGU_LC_OptimizePerformance.UI
             }
             catch (System.Exception ex)
             {
-                Plugin.LogSource.LogError($"[TAIGU-UI] RenderGUI 异常: {ex.Message}");
+                Plugin.LogSource.LogError($"[TAIGU-UI] RenderGUI 渲染异常: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 由 Harmony 补丁调用的按键检测方法（兜底方案）
+        /// 协程延迟初始化 UI（等待场景加载完成后）
         /// </summary>
-        public void HandleInput()
+        public IEnumerator DelayedInitCoroutine()
         {
-            if (!_initialized || _perfUI == null) return;
-
-            try
-            {
-                var keyboard = UnityEngine.InputSystem.Keyboard.current;
-                if (keyboard != null)
-                {
-                    if (keyboard.f5Key.wasPressedThisFrame)
-                    {
-                        _perfUI.IsVisible = !_perfUI.IsVisible;
-                        Plugin.LogSource.LogInfo($"[TAIGU-UI][兜底] UI 切换: {_perfUI.IsVisible}");
-                    }
-
-                    if (keyboard.f6Key.wasPressedThisFrame)
-                    {
-                        _perfUI.ShowFPS = !_perfUI.ShowFPS;
-                        Plugin.LogSource.LogInfo($"[TAIGU-UI][兜底] FPS 显示切换: {_perfUI.ShowFPS}");
-                    }
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Plugin.LogSource.LogError($"[TAIGU-UI][兜底] 按键检测异常: {ex.Message}");
-            }
+            Plugin.LogSource.LogInfo("[TAIGU-UI] 延迟初始化协程启动...");
+            
+            // 等待 2 秒，确保场景完全加载
+            yield return new WaitForSeconds(2f);
+            
+            Plugin.LogSource.LogInfo($"[TAIGU-UI] 延迟初始化完成，enabled={this.enabled}, activeSelf={gameObject.activeSelf}");
+            
+            // 确保组件启用
+            this.enabled = true;
+            gameObject.SetActive(true);
         }
     }
 }

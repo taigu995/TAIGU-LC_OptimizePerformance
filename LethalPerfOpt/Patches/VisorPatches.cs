@@ -20,7 +20,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
         static readonly Dictionary<int, GameObject> _overlayObjects = new Dictionary<int, GameObject>();
         static Mesh _quadMesh;
 
-        public static bool IsEnabled => ModConfig.DisableVisor != null && ModConfig.DisableVisor.Value;
+        public static bool IsEnabled => ModConfig.EnableVisorRemoval != null && ModConfig.EnableVisorRemoval.Value;
 
         [HarmonyPatch(typeof(PlayerControllerB), "Start")]
         [HarmonyPostfix]

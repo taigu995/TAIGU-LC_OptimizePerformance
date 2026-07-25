@@ -1,13 +1,13 @@
 using BepInEx.Configuration;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace TAIGU_LC_OptimizePerformance.Config
 {
-    /// <summary>
-    /// 模组配置 - 整合 LethalSponge 等优化模组的所有配置项
-    /// </summary>
     public static class ModConfig
     {
+        public static ConfigFile ConfigFile { get; private set; }
+
         // ===== 快捷键 =====
         public static ConfigEntry<KeyCode> ToggleUIKey;
         public static ConfigEntry<KeyCode> ToggleFPSKey;
@@ -16,7 +16,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
         public static ConfigEntry<bool> EnableOnStart;
         public static ConfigEntry<string> QualityPreset;
 
-        // ===== 模块启用开关 =====
+        // ===== 优化开关 =====
         public static ConfigEntry<bool> EnableRenderOpt;
         public static ConfigEntry<bool> EnableMemoryOpt;
         public static ConfigEntry<bool> EnablePhysicsOpt;
@@ -83,7 +83,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
         public static ConfigEntry<float> SleepThreshold;
         public static ConfigEntry<bool> DisableSleepingBodies;
 
-        // ===== 灯光优化 (来自 LethalSponge) =====
+        // ===== 灯光优化 =====
         public static ConfigEntry<float> LightIntensityMultiplier;
         public static ConfigEntry<float> LightFadeDistanceMultiplier;
         public static ConfigEntry<bool> DisableLightShadows;
@@ -94,7 +94,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
         public static ConfigEntry<int> MaxDynamicLights;
         public static ConfigEntry<int> ShadowCascades;
 
-        // ===== 摄像头优化 (来自 LethalSponge) =====
+        // ===== 摄像头优化 =====
         public static ConfigEntry<int> MapCameraFramerate;
         public static ConfigEntry<int> SecurityCameraFramerate;
         public static ConfigEntry<int> ShipCameraFramerate;
@@ -102,6 +102,13 @@ namespace TAIGU_LC_OptimizePerformance.Config
         public static ConfigEntry<bool> PatchCameraScript;
         public static ConfigEntry<bool> DisableTransparentShipCamera;
         public static ConfigEntry<bool> DisableTransparentMapCamera;
+
+        // ===== 摄像头分辨率自定义 =====
+        public static ConfigEntry<bool> EnableCameraResCustom;
+        public static ConfigEntry<bool> CameraResAutoSize;
+        public static ConfigEntry<int> CameraResWidth;
+        public static ConfigEntry<int> CameraResHeight;
+        public static ConfigEntry<bool> CheckResEveryFrame;
 
         // ===== 音频优化 =====
         public static ConfigEntry<bool> DisableDistantAudio;
@@ -112,278 +119,291 @@ namespace TAIGU_LC_OptimizePerformance.Config
         public static ConfigEntry<int> MaxAudioSources;
         public static ConfigEntry<int> MaxParticles;
 
-        // ===== 组件缓存 =====
+        // ===== 内存优化增强 (来自 LethalSponge) =====
         public static ConfigEntry<bool> EnableComponentCaching;
         public static ConfigEntry<int> MaxCachedComponents;
 
-        // ===== 网格 LOD (来自 LethalSponge) =====
+        // ===== 网格优化 (来自 LethalSponge) =====
         public static ConfigEntry<bool> GenerateLODs;
         public static ConfigEntry<bool> FixComplexMeshes;
-        public static ConfigEntry<float> ComplexMeshVertCutoff;
-
-        // ===== 植被 LOD 修复 (来自 LethalSponge) =====
         public static ConfigEntry<bool> FixFoliageLOD;
 
-        // ===== 输入延迟修复 (来自 LethalSponge) =====
-        public static ConfigEntry<bool> FixInputActions;
+        // ===== 面罩移除 =====
+        public static ConfigEntry<bool> EnableVisorRemoval;
 
-        // ===== VSync (来自 LethalSponge) =====
-        public static ConfigEntry<int> VSyncCount;
+        // ===== HUD 宽高比解锁 =====
+        public static ConfigEntry<bool> EnableHUDAspectRatioUnlock;
+        public static ConfigEntry<float> HUDAspectRatio;
 
-        // ===== 摄像头分辨率自定义 (来自 Fix-Camera-Resolution) =====
-        public static ConfigEntry<bool> EnableCameraResCustom;
-        public static ConfigEntry<bool> CameraResAutoSize;
-        public static ConfigEntry<int> CameraResWidth;
-        public static ConfigEntry<int> CameraResHeight;
-        public static ConfigEntry<bool> CheckResEveryFrame;
-
-        // ===== HDRP 后处理模式 (来自 Fix-Camera-Resolution) =====
-        public static ConfigEntry<string> AntialiasingMode;
-        public static ConfigEntry<string> HDRPBloomMode;
+        // ===== 雾效模式 =====
         public static ConfigEntry<string> FogMode;
-        public static ConfigEntry<string> HDRPShadowMode;
-        public static ConfigEntry<string> HDRPPostProcessingMode;
-        public static ConfigEntry<string> HDRPVignetteMode;
 
-        // ===== 头盔面罩移除 (来自 Fix-Camera-Resolution) =====
-        public static ConfigEntry<bool> DisableVisor;
-
-        // ===== HUD 宽高比 (来自 Fix-Camera-Resolution) =====
-        public static ConfigEntry<bool> FixedAspectRatio;
-
-        public static void Init(ConfigFile configFile)
+        public static void Init(ConfigFile file)
         {
-            // 快捷键
-            ToggleUIKey = configFile.Bind("Hotkeys", "ToggleUI", KeyCode.F5,
-                "打开/关闭性能优化面板");
-            ToggleFPSKey = configFile.Bind("Hotkeys", "ToggleFPS", KeyCode.F6,
-                "切换 FPS 显示");
+            ConfigFile = file;
 
-            // 通用
-            EnableOnStart = configFile.Bind("General", "EnableOnStart", true,
-                "游戏启动时自动应用优化");
-            QualityPreset = configFile.Bind("General", "QualityPreset", "Performance",
-                "质量预设: Ultra/High/Balanced/Performance/Extreme");
+            // ===== 快捷键 =====
+            ToggleUIKey = file.Bind("快捷键", "ToggleUIKey", KeyCode.F5, "切换 UI 面板的快捷键");
+            ToggleFPSKey = file.Bind("快捷键", "ToggleFPSKey", KeyCode.F6, "切换 FPS 显示的快捷键");
 
-            // 模块启用开关
-            EnableRenderOpt = configFile.Bind("Modules", "EnableRenderOpt", true, "启用渲染优化");
-            EnableMemoryOpt = configFile.Bind("Modules", "EnableMemoryOpt", true, "启用内存优化");
-            EnablePhysicsOpt = configFile.Bind("Modules", "EnablePhysicsOpt", true, "启用物理优化");
-            EnableCullingOpt = configFile.Bind("Modules", "EnableCullingOpt", true, "启用遮挡剔除");
-            EnableParticleOpt = configFile.Bind("Modules", "EnableParticleOpt", true, "启用粒子优化");
-            EnableLightingOpt = configFile.Bind("Modules", "EnableLightingOpt", true, "启用灯光优化");
-            EnableAudioOpt = configFile.Bind("Modules", "EnableAudioOpt", true, "启用音频优化");
-            EnableCameraOpt = configFile.Bind("Modules", "EnableCameraOpt", true, "启用摄像头优化");
+            // ===== 通用设置 =====
+            EnableOnStart = file.Bind("通用", "EnableOnStart", true, "是否在启动时自动应用优化");
+            QualityPreset = file.Bind("通用", "QualityPreset", "Performance", "质量预设 (Vanilla/Balanced/Performance/Extreme)");
+
+            // ===== 优化开关 =====
+            EnableRenderOpt = file.Bind("优化开关", "EnableRenderOpt", true, "启用渲染优化");
+            EnableMemoryOpt = file.Bind("优化开关", "EnableMemoryOpt", true, "启用内存优化");
+            EnablePhysicsOpt = file.Bind("优化开关", "EnablePhysicsOpt", true, "启用物理优化");
+            EnableCullingOpt = file.Bind("优化开关", "EnableCullingOpt", true, "启用遮挡剔除优化");
+            EnableParticleOpt = file.Bind("优化开关", "EnableParticleOpt", true, "启用粒子优化");
+            EnableLightingOpt = file.Bind("优化开关", "EnableLightingOpt", true, "启用灯光优化");
+            EnableAudioOpt = file.Bind("优化开关", "EnableAudioOpt", true, "启用音频优化");
+            EnableCameraOpt = file.Bind("优化开关", "EnableCameraOpt", true, "启用摄像头优化");
+
+            // ===== 渲染优化 =====
+            LODBias = file.Bind("渲染", "LODBias", 1f, new ConfigDescription("LOD 偏移量 (0.5=激进, 1=原版, 2=高质量)", new AcceptableValueRange<float>(0.1f, 5f)));
+            DisableShadows = file.Bind("渲染", "DisableShadows", false, "禁用所有阴影");
+            MaxShadowDistance = file.Bind("渲染", "MaxShadowDistance", 300f, new ConfigDescription("最大阴影距离", new AcceptableValueRange<float>(0f, 1000f)));
+            ShadowResolution = file.Bind("渲染", "ShadowResolution", 2, new ConfigDescription("阴影分辨率 (0=低, 1=中, 2=高, 3=非常高)", new AcceptableValueRange<int>(0, 3)));
+            MaxDrawDistance = file.Bind("渲染", "MaxDrawDistance", 5000f, new ConfigDescription("最大绘制距离", new AcceptableValueRange<float>(100f, 10000f)));
+            MaxFPS = file.Bind("渲染", "MaxFPS", 0, new ConfigDescription("最大帧率限制 (0=无限制)", new AcceptableValueRange<int>(0, 300)));
+            EnableBatching = file.Bind("渲染", "EnableBatching", true, "启用静态批处理");
+
+            // ===== HDRP 渲染管线覆盖 (来自 LethalSponge) =====
+            DecalDrawDistance = file.Bind("HDRP", "DecalDrawDistance", 100, new ConfigDescription("贴花绘制距离", new AcceptableValueRange<int>(10, 1000)));
+            DecalAtlasSize = file.Bind("HDRP", "DecalAtlasSize", 512, new ConfigDescription("贴花图集大小", new AcceptableValueRange<int>(128, 2048)));
+            ShadowMaxResolution = file.Bind("HDRP", "ShadowMaxResolution", 1024, new ConfigDescription("阴影最大分辨率", new AcceptableValueRange<int>(256, 4096)));
+            ShadowAtlasSize = file.Bind("HDRP", "ShadowAtlasSize", 1024, new ConfigDescription("阴影图集大小", new AcceptableValueRange<int>(256, 4096)));
+            MaxCubeReflectionProbes = file.Bind("HDRP", "MaxCubeReflectionProbes", 32, new ConfigDescription("最大立方体反射探针数", new AcceptableValueRange<int>(0, 128)));
+            MaxPlanarReflectionProbes = file.Bind("HDRP", "MaxPlanarReflectionProbes", 8, new ConfigDescription("最大平面反射探针数", new AcceptableValueRange<int>(0, 32)));
+            FogBudget = file.Bind("HDRP", "FogBudget", 0.33f, new ConfigDescription("雾效预算 (0=禁用, 1=完全)", new AcceptableValueRange<float>(0f, 1f)));
+            DeferredOnly = file.Bind("HDRP", "DeferredOnly", true, "仅使用延迟渲染");
+
+            // ===== 后处理效果开关 (来自 LethalSponge) =====
+            DisableDOF = file.Bind("后处理", "DisableDOF", true, "禁用景深");
+            DisableMotionBlur = file.Bind("后处理", "DisableMotionBlur", true, "禁用运动模糊");
+            DisableBloom = file.Bind("后处理", "DisableBloom", true, "禁用光晕");
+            DisableReflections = file.Bind("后处理", "DisableReflections", true, "禁用反射");
+
+            // ===== 内存优化 =====
+            GCInterval = file.Bind("内存", "GCInterval", 30f, new ConfigDescription("GC 间隔（秒）", new AcceptableValueRange<float>(5f, 300f)));
+            AggressiveGC = file.Bind("内存", "AggressiveGC", false, "激进 GC 模式");
+            EnableDailyCleanup = file.Bind("内存", "EnableDailyCleanup", true, "启用每日清理");
+
+            // ===== 资源去重 (来自 LethalSponge) =====
+            EnableMeshDedup = file.Bind("去重", "EnableMeshDedup", true, "启用网格去重");
+            EnableTextureDedup = file.Bind("去重", "EnableTextureDedup", true, "启用纹理去重");
+            EnableAudioDedup = file.Bind("去重", "EnableAudioDedup", true, "启用音频去重");
+            EnableTextureResize = file.Bind("去重", "EnableTextureResize", false, "启用纹理缩放");
+            MaxTextureSize = file.Bind("去重", "MaxTextureSize", 1024, new ConfigDescription("最大纹理大小", new AcceptableValueRange<int>(256, 4096)));
+
+            // ===== 遮挡剔除 =====
+            EnableFrustumCulling = file.Bind("剔除", "EnableFrustumCulling", true, "启用视锥剔除");
+            EnableRoomCulling = file.Bind("剔除", "EnableRoomCulling", true, "启用房间剔除");
+            CullingDistance = file.Bind("剔除", "CullingDistance", 50f, new ConfigDescription("剔除距离", new AcceptableValueRange<float>(10f, 200f)));
+            FrustumCullingMargin = file.Bind("剔除", "FrustumCullingMargin", 0.1f, new ConfigDescription("视锥剔除边距", new AcceptableValueRange<float>(0f, 1f)));
+
+            // ===== 粒子优化 =====
+            DisableRainParticles = file.Bind("粒子", "DisableRainParticles", true, "禁用雨粒子");
+            ParticleUpdateRate = file.Bind("粒子", "ParticleUpdateRate", 0.5f, new ConfigDescription("粒子更新率", new AcceptableValueRange<float>(0.1f, 1f)));
+            MaxParticlesPerSystem = file.Bind("粒子", "MaxParticlesPerSystem", 500, new ConfigDescription("每个粒子系统最大粒子数", new AcceptableValueRange<int>(50, 5000)));
+            ParticleCullingDistance = file.Bind("粒子", "ParticleCullingDistance", 30f, new ConfigDescription("粒子剔除距离", new AcceptableValueRange<float>(5f, 100f)));
+
+            // ===== 物理优化 =====
+            PhysicsUpdateRate = file.Bind("物理", "PhysicsUpdateRate", 0.5f, new ConfigDescription("物理更新率", new AcceptableValueRange<float>(0.1f, 1f)));
+            DisableRagdoll = file.Bind("物理", "DisableRagdoll", false, "禁用布娃娃物理");
+            PhysicsTimeStep = file.Bind("物理", "PhysicsTimeStep", 0.02f, new ConfigDescription("物理时间步长", new AcceptableValueRange<float>(0.005f, 0.1f)));
+            MaxPhysicsIterations = file.Bind("物理", "MaxPhysicsIterations", 6, new ConfigDescription("最大物理迭代次数", new AcceptableValueRange<int>(1, 20)));
+            SleepThreshold = file.Bind("物理", "SleepThreshold", 0.005f, new ConfigDescription("睡眠阈值", new AcceptableValueRange<float>(0.001f, 0.1f)));
+            DisableSleepingBodies = file.Bind("物理", "DisableSleepingBodies", false, "禁用刚体睡眠");
+
+            // ===== 灯光优化 =====
+            LightIntensityMultiplier = file.Bind("灯光", "LightIntensityMultiplier", 0.8f, new ConfigDescription("灯光强度乘数", new AcceptableValueRange<float>(0.1f, 2f)));
+            LightFadeDistanceMultiplier = file.Bind("灯光", "LightFadeDistanceMultiplier", 0.6f, new ConfigDescription("灯光淡入距离乘数", new AcceptableValueRange<float>(0.1f, 2f)));
+            DisableLightShadows = file.Bind("灯光", "DisableLightShadows", true, "禁用灯光阴影");
+            VolumetricFogDistanceMultiplier = file.Bind("灯光", "VolumetricFogDistanceMultiplier", 0.5f, new ConfigDescription("体积雾距离乘数", new AcceptableValueRange<float>(0.1f, 2f)));
+            VolumetricFogDistanceCap = file.Bind("灯光", "VolumetricFogDistanceCap", 50f, new ConfigDescription("体积雾距离上限", new AcceptableValueRange<float>(10f, 200f)));
+            DisableDynamicShadows = file.Bind("灯光", "DisableDynamicShadows", true, "禁用动态阴影");
+            LightCullingDistance = file.Bind("灯光", "LightCullingDistance", 30f, new ConfigDescription("灯光剔除距离", new AcceptableValueRange<float>(5f, 100f)));
+            MaxDynamicLights = file.Bind("灯光", "MaxDynamicLights", 8, new ConfigDescription("最大动态灯光数", new AcceptableValueRange<int>(0, 32)));
+            ShadowCascades = file.Bind("灯光", "ShadowCascades", 2, new ConfigDescription("阴影级联数", new AcceptableValueRange<int>(0, 4)));
+
+            // ===== 摄像头优化 =====
+            MapCameraFramerate = file.Bind("摄像头", "MapCameraFramerate", 15, new ConfigDescription("地图摄像头帧率", new AcceptableValueRange<int>(5, 60)));
+            SecurityCameraFramerate = file.Bind("摄像头", "SecurityCameraFramerate", 15, new ConfigDescription("监控摄像头帧率", new AcceptableValueRange<int>(5, 60)));
+            ShipCameraFramerate = file.Bind("摄像头", "ShipCameraFramerate", 30, new ConfigDescription("飞船摄像头帧率", new AcceptableValueRange<int>(5, 60)));
+            FixCameraSettings = file.Bind("摄像头", "FixCameraSettings", true, "修复摄像头设置");
+            PatchCameraScript = file.Bind("摄像头", "PatchCameraScript", true, "修补摄像头脚本");
+            DisableTransparentShipCamera = file.Bind("摄像头", "DisableTransparentShipCamera", true, "禁用透明飞船摄像头");
+            DisableTransparentMapCamera = file.Bind("摄像头", "DisableTransparentMapCamera", true, "禁用透明地图摄像头");
+
+            // ===== 摄像头分辨率自定义 =====
+            EnableCameraResCustom = file.Bind("摄像头分辨率", "EnableCameraResCustom", false, "启用自定义摄像头分辨率");
+            CameraResAutoSize = file.Bind("摄像头分辨率", "CameraResAutoSize", true, "自动适配屏幕分辨率");
+            CameraResWidth = file.Bind("摄像头分辨率", "CameraResWidth", 1920, new ConfigDescription("自定义宽度", new AcceptableValueRange<int>(320, 3840)));
+            CameraResHeight = file.Bind("摄像头分辨率", "CameraResHeight", 1080, new ConfigDescription("自定义高度", new AcceptableValueRange<int>(240, 2160)));
+            CheckResEveryFrame = file.Bind("摄像头分辨率", "CheckResEveryFrame", false, "每帧检测分辨率变化");
+
+            // ===== 音频优化 =====
+            DisableDistantAudio = file.Bind("音频", "DisableDistantAudio", true, "禁用远距离音频");
+            DistantAudioThreshold = file.Bind("音频", "DistantAudioThreshold", 50f, new ConfigDescription("远距离音频阈值", new AcceptableValueRange<float>(10f, 200f)));
+            ReduceAudioUpdateRate = file.Bind("音频", "ReduceAudioUpdateRate", true, "降低音频更新率");
+            DisableReverb = file.Bind("音频", "DisableReverb", true, "禁用混响");
+            AudioCullingDistance = file.Bind("音频", "AudioCullingDistance", 100f, new ConfigDescription("音频剔除距离", new AcceptableValueRange<float>(10f, 300f)));
+            MaxAudioSources = file.Bind("音频", "MaxAudioSources", 32, new ConfigDescription("最大音频源数", new AcceptableValueRange<int>(8, 128)));
+            MaxParticles = file.Bind("音频", "MaxParticles", 5000, new ConfigDescription("最大粒子数", new AcceptableValueRange<int>(500, 20000)));
+
+            // ===== 内存优化增强 (来自 LethalSponge) =====
+            EnableComponentCaching = file.Bind("内存增强", "EnableComponentCaching", true, "启用组件缓存");
+            MaxCachedComponents = file.Bind("内存增强", "MaxCachedComponents", 1000, new ConfigDescription("最大缓存组件数", new AcceptableValueRange<int>(100, 10000)));
+
+            // ===== 网格优化 (来自 LethalSponge) =====
+            GenerateLODs = file.Bind("网格", "GenerateLODs", true, "生成 LOD");
+            FixComplexMeshes = file.Bind("网格", "FixComplexMeshes", true, "修复复杂网格");
+            FixFoliageLOD = file.Bind("网格", "FixFoliageLOD", true, "修复植被 LOD 材质泄漏");
+
+            // ===== 面罩移除 =====
+            EnableVisorRemoval = file.Bind("面罩", "EnableVisorRemoval", false, "启用面罩移除");
+
+            // ===== HUD 宽高比解锁 =====
+            EnableHUDAspectRatioUnlock = file.Bind("HUD", "EnableHUDAspectRatioUnlock", false, "启用 HUD 宽高比解锁");
+            HUDAspectRatio = file.Bind("HUD", "HUDAspectRatio", 1.777f, new ConfigDescription("HUD 宽高比 (1.777=16:9)", new AcceptableValueRange<float>(1f, 3f)));
+
+            // ===== 雾效模式 =====
+            FogMode = file.Bind("雾效", "FogMode", "Vanilla", new ConfigDescription("雾效模式 (Vanilla/Hide/Disable/ForceDisable)", new AcceptableValueList<string>("Vanilla", "Hide", "Disable", "ForceDisable")));
+        }
+
+        /// <summary>
+        /// 重置所有配置项为默认值
+        /// </summary>
+        public static void ResetToDefaults()
+        {
+            // 通用设置
+            QualityPreset.Value = "Performance";
+            EnableRenderOpt.Value = true;
+            EnableMemoryOpt.Value = true;
+            EnablePhysicsOpt.Value = true;
+            EnableCullingOpt.Value = true;
+            EnableParticleOpt.Value = true;
+            EnableLightingOpt.Value = true;
+            EnableAudioOpt.Value = true;
+            EnableCameraOpt.Value = true;
 
             // 渲染优化
-            LODBias = configFile.Bind("Render", "LODBias", 1.0f,
-                "LOD 偏移值 (越高越精细)");
-            DisableShadows = configFile.Bind("Render", "DisableShadows", false,
-                "禁用所有阴影");
-            MaxShadowDistance = configFile.Bind("Render", "MaxShadowDistance", 150f,
-                "最大阴影距离");
-            ShadowResolution = configFile.Bind("Render", "ShadowResolution", 1024,
-                "阴影分辨率 (256/512/1024/2048/4096)");
-            MaxDrawDistance = configFile.Bind("Render", "MaxDrawDistance", 500f,
-                "最大绘制距离");
-            MaxFPS = configFile.Bind("Render", "MaxFPS", 0,
-                "最大帧率 (0=不限制)");
-            EnableBatching = configFile.Bind("Render", "EnableBatching", true,
-                "启用动态合批");
+            LODBias.Value = 1f;
+            DisableShadows.Value = false;
+            MaxShadowDistance.Value = 300f;
+            ShadowResolution.Value = 2;
+            MaxDrawDistance.Value = 5000f;
+            MaxFPS.Value = 0;
+            EnableBatching.Value = true;
 
-            // HDRP 渲染管线覆盖
-            DecalDrawDistance = configFile.Bind("HDRP", "DecalDrawDistance", 1000,
-                "贴花绘制距离");
-            DecalAtlasSize = configFile.Bind("HDRP", "DecalAtlasSize", 4096,
-                "贴花图集尺寸");
-            ShadowMaxResolution = configFile.Bind("HDRP", "ShadowMaxResolution", 2048,
-                "阴影最大分辨率");
-            ShadowAtlasSize = configFile.Bind("HDRP", "ShadowAtlasSize", 4096,
-                "阴影图集尺寸");
-            MaxCubeReflectionProbes = configFile.Bind("HDRP", "MaxCubeReflectionProbes", 48,
-                "最大立方体反射探针数");
-            MaxPlanarReflectionProbes = configFile.Bind("HDRP", "MaxPlanarReflectionProbes", 16,
-                "最大平面反射探针数");
-            FogBudget = configFile.Bind("HDRP", "FogBudget", 0.17f,
-                "雾效预算 (0-1)");
-            DeferredOnly = configFile.Bind("HDRP", "DeferredOnly", false,
-                "仅使用延迟渲染模式");
+            // HDRP
+            DecalDrawDistance.Value = 100;
+            DecalAtlasSize.Value = 512;
+            ShadowMaxResolution.Value = 1024;
+            ShadowAtlasSize.Value = 1024;
+            MaxCubeReflectionProbes.Value = 32;
+            MaxPlanarReflectionProbes.Value = 8;
+            FogBudget.Value = 0.33f;
+            DeferredOnly.Value = true;
 
-            // 后处理效果
-            DisableDOF = configFile.Bind("PostProcessing", "DisableDOF", false,
-                "禁用景深效果");
-            DisableMotionBlur = configFile.Bind("PostProcessing", "DisableMotionBlur", false,
-                "禁用运动模糊");
-            DisableBloom = configFile.Bind("PostProcessing", "DisableBloom", false,
-                "禁用泛光效果");
-            DisableReflections = configFile.Bind("PostProcessing", "DisableReflections", false,
-                "禁用反射效果");
+            // 后处理
+            DisableDOF.Value = true;
+            DisableMotionBlur.Value = true;
+            DisableBloom.Value = true;
+            DisableReflections.Value = true;
 
-            // 内存优化
-            GCInterval = configFile.Bind("Memory", "GCInterval", 30f,
-                "GC 回收间隔（秒）");
-            AggressiveGC = configFile.Bind("Memory", "AggressiveGC", false,
-                "激进 GC 模式（更频繁但更轻量）");
-            EnableDailyCleanup = configFile.Bind("Memory", "EnableDailyCleanup", true,
-                "每日自动清理资源（参考 LethalSponge）");
+            // 内存
+            GCInterval.Value = 30f;
+            AggressiveGC.Value = false;
+            EnableDailyCleanup.Value = true;
 
-            // 资源去重
-            EnableMeshDedup = configFile.Bind("Dedup", "EnableMeshDedup", false,
-                "启用网格去重（增加加载时间，减少内存）");
-            EnableTextureDedup = configFile.Bind("Dedup", "EnableTextureDedup", false,
-                "启用纹理去重（增加加载时间，减少显存）");
-            EnableAudioDedup = configFile.Bind("Dedup", "EnableAudioDedup", false,
-                "启用音频去重（增加加载时间，减少内存）");
-            EnableTextureResize = configFile.Bind("Dedup", "EnableTextureResize", true,
-                "启用纹理缩放（减少显存占用）");
-            MaxTextureSize = configFile.Bind("Dedup", "MaxTextureSize", 2048,
-                "纹理最大尺寸 (64/128/256/512/1024/2048)");
+            // 去重
+            EnableMeshDedup.Value = true;
+            EnableTextureDedup.Value = true;
+            EnableAudioDedup.Value = true;
+            EnableTextureResize.Value = false;
+            MaxTextureSize.Value = 1024;
 
-            // 遮挡剔除
-            EnableFrustumCulling = configFile.Bind("Culling", "EnableFrustumCulling", true,
-                "启用视锥剔除");
-            EnableRoomCulling = configFile.Bind("Culling", "EnableRoomCulling", false,
-                "启用房间剔除（可能影响游戏体验）");
-            CullingDistance = configFile.Bind("Culling", "CullingDistance", 200f,
-                "剔除距离");
-            FrustumCullingMargin = configFile.Bind("Culling", "FrustumCullingMargin", 10f,
-                "视锥剔除边距");
+            // 剔除
+            EnableFrustumCulling.Value = true;
+            EnableRoomCulling.Value = true;
+            CullingDistance.Value = 50f;
+            FrustumCullingMargin.Value = 0.1f;
 
-            // 粒子优化
-            DisableRainParticles = configFile.Bind("Particles", "DisableRainParticles", false,
-                "禁用雨天粒子");
-            ParticleUpdateRate = configFile.Bind("Particles", "ParticleUpdateRate", 0.1f,
-                "粒子更新间隔（秒）");
-            MaxParticlesPerSystem = configFile.Bind("Particles", "MaxParticlesPerSystem", 100,
-                "每个粒子系统最大粒子数");
-            ParticleCullingDistance = configFile.Bind("Particles", "ParticleCullingDistance", 100f,
-                "粒子剔除距离");
+            // 粒子
+            DisableRainParticles.Value = true;
+            ParticleUpdateRate.Value = 0.5f;
+            MaxParticlesPerSystem.Value = 500;
+            ParticleCullingDistance.Value = 30f;
 
-            // 物理优化
-            PhysicsUpdateRate = configFile.Bind("Physics", "PhysicsUpdateRate", 0.05f,
-                "物理更新间隔（秒）");
-            DisableRagdoll = configFile.Bind("Physics", "DisableRagdoll", false,
-                "禁用布娃娃系统");
-            PhysicsTimeStep = configFile.Bind("Physics", "PhysicsTimeStep", 0.02f,
-                "物理时间步长");
-            MaxPhysicsIterations = configFile.Bind("Physics", "MaxPhysicsIterations", 6,
-                "物理求解器最大迭代次数");
-            SleepThreshold = configFile.Bind("Physics", "SleepThreshold", 0.005f,
-                "刚体休眠阈值");
-            DisableSleepingBodies = configFile.Bind("Physics", "DisableSleepingBodies", true,
-                "优化休眠刚体");
+            // 物理
+            PhysicsUpdateRate.Value = 0.5f;
+            DisableRagdoll.Value = false;
+            PhysicsTimeStep.Value = 0.02f;
+            MaxPhysicsIterations.Value = 6;
+            SleepThreshold.Value = 0.005f;
+            DisableSleepingBodies.Value = false;
 
-            // 灯光优化
-            LightIntensityMultiplier = configFile.Bind("Lighting", "LightIntensityMultiplier", 0.8f,
-                "灯光强度乘数 (0.0-2.0)");
-            LightFadeDistanceMultiplier = configFile.Bind("Lighting", "LightFadeDistanceMultiplier", 0.6f,
-                "灯光淡入距离乘数 (0.0-2.0)");
-            DisableLightShadows = configFile.Bind("Lighting", "DisableLightShadows", true,
-                "禁用灯光阴影");
-            VolumetricFogDistanceMultiplier = configFile.Bind("Lighting", "VolumetricFogDistanceMultiplier", 0.5f,
-                "体积雾距离乘数 (0.0-2.0)");
-            VolumetricFogDistanceCap = configFile.Bind("Lighting", "VolumetricFogDistanceCap", 0f,
-                "体积雾距离上限 (0=不限制)");
-            DisableDynamicShadows = configFile.Bind("Lighting", "DisableDynamicShadows", false,
-                "禁用动态阴影");
-            LightCullingDistance = configFile.Bind("Lighting", "LightCullingDistance", 100f,
-                "灯光剔除距离");
-            MaxDynamicLights = configFile.Bind("Lighting", "MaxDynamicLights", 8,
-                "最大动态灯光数");
-            ShadowCascades = configFile.Bind("Lighting", "ShadowCascades", 2,
-                "阴影级联数");
+            // 灯光
+            LightIntensityMultiplier.Value = 0.8f;
+            LightFadeDistanceMultiplier.Value = 0.6f;
+            DisableLightShadows.Value = true;
+            VolumetricFogDistanceMultiplier.Value = 0.5f;
+            VolumetricFogDistanceCap.Value = 50f;
+            DisableDynamicShadows.Value = true;
+            LightCullingDistance.Value = 30f;
+            MaxDynamicLights.Value = 8;
+            ShadowCascades.Value = 2;
 
-            // 摄像头优化
-            MapCameraFramerate = configFile.Bind("Camera", "MapCameraFramerate", 10,
-                "地图摄像头帧率");
-            SecurityCameraFramerate = configFile.Bind("Camera", "SecurityCameraFramerate", 15,
-                "安保摄像头帧率");
-            ShipCameraFramerate = configFile.Bind("Camera", "ShipCameraFramerate", 30,
-                "飞船摄像头帧率");
-            FixCameraSettings = configFile.Bind("Camera", "FixCameraSettings", true,
-                "修复摄像头设置（参考 LethalSponge）");
-            PatchCameraScript = configFile.Bind("Camera", "PatchCameraScript", true,
-                "补丁摄像头脚本（视锥剔除优化）");
-            DisableTransparentShipCamera = configFile.Bind("Camera", "DisableTransparentShipCamera", false,
-                "禁用飞船摄像头透明渲染");
-            DisableTransparentMapCamera = configFile.Bind("Camera", "DisableTransparentMapCamera", false,
-                "禁用地图摄像头透明渲染");
+            // 摄像头
+            MapCameraFramerate.Value = 15;
+            SecurityCameraFramerate.Value = 15;
+            ShipCameraFramerate.Value = 30;
+            FixCameraSettings.Value = true;
+            PatchCameraScript.Value = true;
+            DisableTransparentShipCamera.Value = true;
+            DisableTransparentMapCamera.Value = true;
 
-            // 音频优化
-            DisableDistantAudio = configFile.Bind("Audio", "DisableDistantAudio", false,
-                "禁用远距离音频");
-            DistantAudioThreshold = configFile.Bind("Audio", "DistantAudioThreshold", 10f,
-                "远距离音频阈值");
-            ReduceAudioUpdateRate = configFile.Bind("Audio", "ReduceAudioUpdateRate", false,
-                "降低音频更新频率");
-            DisableReverb = configFile.Bind("Audio", "DisableReverb", false,
-                "禁用混响效果");
-            AudioCullingDistance = configFile.Bind("Audio", "AudioCullingDistance", 100f,
-                "音频剔除距离");
-            MaxAudioSources = configFile.Bind("Audio", "MaxAudioSources", 16,
-                "最大音频源数");
-            MaxParticles = configFile.Bind("Particles", "MaxParticles", 500,
-                "每系统最大粒子数");
+            // 摄像头分辨率
+            EnableCameraResCustom.Value = false;
+            CameraResAutoSize.Value = true;
+            CameraResWidth.Value = 1920;
+            CameraResHeight.Value = 1080;
+            CheckResEveryFrame.Value = false;
 
-            // 组件缓存
-            EnableComponentCaching = configFile.Bind("Memory", "EnableComponentCaching", true,
-                "启用组件缓存");
-            MaxCachedComponents = configFile.Bind("Memory", "MaxCachedComponents", 500,
-                "最大缓存组件数");
+            // 音频
+            DisableDistantAudio.Value = true;
+            DistantAudioThreshold.Value = 50f;
+            ReduceAudioUpdateRate.Value = true;
+            DisableReverb.Value = true;
+            AudioCullingDistance.Value = 100f;
+            MaxAudioSources.Value = 32;
+            MaxParticles.Value = 5000;
 
-            // 网格 LOD
-            GenerateLODs = configFile.Bind("Mesh", "GenerateLODs", true,
-                "自动生成 LOD（参考 LethalSponge）");
-            FixComplexMeshes = configFile.Bind("Mesh", "FixComplexMeshes", true,
-                "修复复杂网格（减少顶点数）");
-            ComplexMeshVertCutoff = configFile.Bind("Mesh", "ComplexMeshVertCutoff", 5000f,
-                "复杂网格顶点阈值");
+            // 内存增强
+            EnableComponentCaching.Value = true;
+            MaxCachedComponents.Value = 1000;
 
-            // 植被 LOD 修复
-            FixFoliageLOD = configFile.Bind("Fixes", "FixFoliageLOD", true,
-                "修复植被 LOD 材质泄漏（参考 LethalSponge）");
+            // 网格
+            GenerateLODs.Value = true;
+            FixComplexMeshes.Value = true;
+            FixFoliageLOD.Value = true;
 
-            // 输入延迟修复
-            FixInputActions = configFile.Bind("Fixes", "FixInputActions", true,
-                "修复输入延迟（重复实例化 PlayerActions 导致）");
+            // 面罩
+            EnableVisorRemoval.Value = false;
 
-            // VSync
-            VSyncCount = configFile.Bind("Render", "VSyncCount", 1,
-                "垂直同步次数 (0=关闭, 1=60fps, 2=30fps)");
+            // HUD
+            EnableHUDAspectRatioUnlock.Value = false;
+            HUDAspectRatio.Value = 1.777f;
 
-            // ===== 摄像头分辨率自定义 (来自 Fix-Camera-Resolution) =====
-            EnableCameraResCustom = configFile.Bind("Camera", "EnableCameraResCustom", false,
-                "启用摄像头分辨率自定义（参考 Fix-Camera-Resolution）");
-            CameraResAutoSize = configFile.Bind("Camera", "CameraResAutoSize", true,
-                "自动适配窗口大小");
-            CameraResWidth = configFile.Bind("Camera", "CameraResWidth", 1920,
-                "摄像头分辨率宽度 (10-3840)");
-            CameraResHeight = configFile.Bind("Camera", "CameraResHeight", 1080,
-                "摄像头分辨率高度 (10-2160)");
-            CheckResEveryFrame = configFile.Bind("Camera", "CheckResEveryFrame", false,
-                "每帧检测分辨率变化（可能影响性能）");
+            // 雾效
+            FogMode.Value = "Vanilla";
 
-            // ===== HDRP 后处理模式 (来自 Fix-Camera-Resolution) =====
-            AntialiasingMode = configFile.Bind("HDRP", "AntialiasingMode", "None",
-                "抗锯齿模式: None/FXAA/TAA/SMAA");
-            HDRPBloomMode = configFile.Bind("HDRP", "HDRPBloomMode", "Vanilla",
-                "泛光效果: Vanilla/Disable");
-            FogMode = configFile.Bind("HDRP", "FogMode", "Vanilla",
-                "雾效模式: Vanilla/Hide/Disable/ForceDisable");
-            HDRPShadowMode = configFile.Bind("HDRP", "HDRPShadowMode", "Vanilla",
-                "阴影渲染: Vanilla/Disable");
-            HDRPPostProcessingMode = configFile.Bind("HDRP", "HDRPPostProcessingMode", "Vanilla",
-                "后处理效果: Vanilla/Disable");
-            HDRPVignetteMode = configFile.Bind("HDRP", "HDRPVignetteMode", "Vanilla",
-                "暗角效果: Vanilla/Disable");
-
-            // ===== 头盔面罩移除 (来自 Fix-Camera-Resolution) =====
-            DisableVisor = configFile.Bind("Visor", "DisableVisor", false,
-                "移除头盔面罩渲染（参考 Fix-Camera-Resolution）");
-
-            // ===== HUD 宽高比 (来自 Fix-Camera-Resolution) =====
-            FixedAspectRatio = configFile.Bind("HUD", "FixedAspectRatio", true,
-                "固定 HUD 宽高比（关闭以动态适配窗口）");
+            // 快捷键
+            ToggleUIKey.Value = KeyCode.F5;
+            ToggleFPSKey.Value = KeyCode.F6;
         }
     }
 }

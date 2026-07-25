@@ -14,7 +14,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     [HarmonyPatch]
     public static class HUDPatches
     {
-        public static bool IsFixedAspect => ModConfig.FixedAspectRatio == null || ModConfig.FixedAspectRatio.Value;
+        public static bool IsFixedAspect => ModConfig.EnableHUDAspectRatioUnlock == null || !ModConfig.EnableHUDAspectRatioUnlock.Value;
 
         [HarmonyPatch(typeof(HUDManager), "Start")]
         [HarmonyPostfix]

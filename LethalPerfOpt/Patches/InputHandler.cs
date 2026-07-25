@@ -26,16 +26,8 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                 Plugin.LogSource.LogInfo($"[TAIGU-InputPatch] PC.Update 触发中... 已调用 {_pcCallCount} 次");
             }
 
-            // 通过 UIRenderer 处理按键
-            var uiRenderer = UIRenderer.Instance;
-            if (uiRenderer != null)
-            {
-                uiRenderer.HandleInput();
-            }
-            else if (Plugin.PerfUI != null)
-            {
-                HandleInputDirect();
-            }
+            // Input is handled by UIRenderer.Update() directly
+            // No need to call HandleInput() here
         }
 
         /// <summary>
@@ -50,17 +42,15 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                 Plugin.LogSource.LogInfo($"[TAIGU-GUIPatch] HUD.Update 触发中... 已调用 {_hudCallCount} 次");
             }
 
-            // 通过 UIRenderer 处理按键和渲染
+            // Input is handled by UIRenderer.Update() directly
+            // Only render GUI here
             var uiRenderer = UIRenderer.Instance;
             if (uiRenderer != null)
             {
-                uiRenderer.HandleInput();
                 uiRenderer.RenderGUI();
             }
             else if (Plugin.PerfUI != null)
             {
-                HandleInputDirect();
-
                 try
                 {
                     if (Plugin.PerfUI.IsVisible || Plugin.PerfUI.ShowFPS)

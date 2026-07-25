@@ -91,7 +91,10 @@ namespace TAIGU_LC_OptimizePerformance.UI
                 Plugin.ReapplyAllOptimizations();
 
             if (GUILayout.Button("恢复全部默认", UIStyles.ButtonStyle))
-                Plugin.RevertAllOptimizations();
+            {
+                ModConfig.ResetToDefaults();
+                Plugin.ReapplyAllOptimizations();
+            }
 
             if (GUILayout.Button("重置统计", UIStyles.ButtonStyle))
                 Plugin.PerfMonitor.ResetStats();
