@@ -9,7 +9,6 @@ using TAIGU_LC_OptimizePerformance.Optimizers;
 namespace TAIGU_LC_OptimizePerformance
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
-    [BepInDependency("BepInEx", BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string PluginGUID = "com.taigu.lc_optimizeperformance";
