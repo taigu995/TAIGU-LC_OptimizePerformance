@@ -37,6 +37,17 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo($"[LethalPerfOpt:Lighting] 灯光优化已应用 - 修改灯光:{_modifiedLights.Count} 修改雾效:{_modifiedFogs.Count}");
         }
 
+        /// <summary>
+        /// 重新应用灯光优化（场景加载后调用，重新扫描场景中的灯光和雾效）
+        /// </summary>
+        public void Reapply()
+        {
+            _isApplied = false;
+            _modifiedLights.Clear();
+            _modifiedFogs.Clear();
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;

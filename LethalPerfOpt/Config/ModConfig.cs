@@ -162,7 +162,7 @@ namespace TAIGU_LC_OptimizePerformance.Config
             // 通用
             EnableOnStart = configFile.Bind("General", "EnableOnStart", true,
                 "游戏启动时自动应用优化");
-            QualityPreset = configFile.Bind("General", "QualityPreset", "Balanced",
+            QualityPreset = configFile.Bind("General", "QualityPreset", "Performance",
                 "质量预设: Ultra/High/Balanced/Performance/Extreme");
 
             // 模块启用开关
@@ -274,14 +274,14 @@ namespace TAIGU_LC_OptimizePerformance.Config
                 "优化休眠刚体");
 
             // 灯光优化
-            LightIntensityMultiplier = configFile.Bind("Lighting", "LightIntensityMultiplier", 1.0f,
-                "灯光强度乘数");
-            LightFadeDistanceMultiplier = configFile.Bind("Lighting", "LightFadeDistanceMultiplier", 1.0f,
-                "灯光淡入距离乘数");
-            DisableLightShadows = configFile.Bind("Lighting", "DisableLightShadows", false,
+            LightIntensityMultiplier = configFile.Bind("Lighting", "LightIntensityMultiplier", 0.8f,
+                "灯光强度乘数 (0.0-2.0)");
+            LightFadeDistanceMultiplier = configFile.Bind("Lighting", "LightFadeDistanceMultiplier", 0.6f,
+                "灯光淡入距离乘数 (0.0-2.0)");
+            DisableLightShadows = configFile.Bind("Lighting", "DisableLightShadows", true,
                 "禁用灯光阴影");
-            VolumetricFogDistanceMultiplier = configFile.Bind("Lighting", "VolumetricFogDistanceMultiplier", 1.0f,
-                "体积雾距离乘数");
+            VolumetricFogDistanceMultiplier = configFile.Bind("Lighting", "VolumetricFogDistanceMultiplier", 0.5f,
+                "体积雾距离乘数 (0.0-2.0)");
             VolumetricFogDistanceCap = configFile.Bind("Lighting", "VolumetricFogDistanceCap", 0f,
                 "体积雾距离上限 (0=不限制)");
             DisableDynamicShadows = configFile.Bind("Lighting", "DisableDynamicShadows", false,

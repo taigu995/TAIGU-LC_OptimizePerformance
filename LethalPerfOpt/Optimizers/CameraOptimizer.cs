@@ -44,6 +44,18 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Camera] 摄像头优化已应用");
         }
 
+        /// <summary>
+        /// 重新应用摄像头优化（场景加载后调用，重新初始化摄像头引用）
+        /// </summary>
+        public void Reapply()
+        {
+            _isApplied = false;
+            _mapCamera = null;
+            _securityCamera = null;
+            _shipCamera = null;
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;

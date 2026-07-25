@@ -205,6 +205,18 @@ namespace TAIGU_LC_OptimizePerformance
             }
 
             LogSource.LogInfo($"[{PluginName}] UI 重激活完成: activeSelf={uiGo.activeSelf}");
+
+            // 重新应用场景级优化（灯光、音频、粒子等需要场景对象的优化）
+            // 只在非菜单场景中重新应用，避免频繁重扫
+            if (scene.name != "InitSceneLaunchOptions" && scene.name != "InitScene" && scene.name != "MainMenu")
+            {
+                LogSource.LogInfo($"[{PluginName}] 场景 {scene.name} 已加载，重新应用场景级优化...");
+                if (ModConfig.EnableLightingOpt.Value) LightingOpt?.Reapply();
+                if (ModConfig.EnableAudioOpt.Value) AudioOpt?.Reapply();
+                if (ModConfig.EnableParticleOpt.Value) ParticleOpt?.Reapply();
+                if (ModConfig.EnableCameraOpt.Value) CameraOpt?.Reapply();
+                LogSource.LogInfo($"[{PluginName}] 场景级优化已重新应用");
+            }
         }
 
         /// <summary>

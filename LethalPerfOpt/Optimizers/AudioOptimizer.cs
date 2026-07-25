@@ -37,6 +37,16 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo($"[LethalPerfOpt:Audio] 音频优化已应用 - 去重:{_dedupedCount}");
         }
 
+        /// <summary>
+        /// 重新应用音频优化（场景加载后调用，重新扫描场景中的音频源）
+        /// </summary>
+        public void Reapply()
+        {
+            _isApplied = false;
+            _dedupedCount = 0;
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;

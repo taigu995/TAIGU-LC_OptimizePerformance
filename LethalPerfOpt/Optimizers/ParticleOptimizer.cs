@@ -33,6 +33,16 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
             Plugin.LogSource.LogInfo("[LethalPerfOpt:Particle] Particle optimizations applied");
         }
 
+        /// <summary>
+        /// 重新应用粒子优化（场景加载后调用，重新扫描场景中的粒子系统）
+        /// </summary>
+        public void Reapply()
+        {
+            _isApplied = false;
+            _lastUpdateTime = 0f;
+            Apply();
+        }
+
         public void Revert()
         {
             if (!_isApplied) return;
