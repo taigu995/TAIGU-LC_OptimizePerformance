@@ -70,26 +70,23 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     }
 
     /// <summary>
-    /// UI 渲染兜底补丁。
-    /// 补丁 HUDManager.OnGUI 来确保 UI 被渲染。
-    /// HUDManager 是游戏中始终存在的 UI 管理器，其 OnGUI 会被 Unity 调用。
+    /// UI 渲染兜底补丁 - 使用 HUDManager.Update 来渲染 UI。
+    /// 虽然 IMGUI 最好在 OnGUI 中调用，但 HUDManager.Update 每帧执行，
+    /// 我们可以在此调用 GUI 方法，在下一帧的 GUI 阶段生效。
     /// </summary>
     [HarmonyPatch(typeof(HUDManager))]
     public class GUIRenderPatch
     {
         private static bool _logged;
 
-        /// <summary>
-        /// 补丁 HUDManager.OnGUI - 在游戏的 GUI 渲染阶段绘制我们的 UI
-        /// </summary>
-        [HarmonyPatch("OnGUI")]
+        [HarmonyPatch("Update")]
         [HarmonyPostfix]
-        private static void HUDManager_OnGUI()
+        private static void HUDManager_Update()
         {
             if (!_logged)
             {
                 _logged = true;
-                Plugin.LogSource.LogInfo("[TAIGU-GUIPatch] HUDManager.OnGUI 补丁首次触发");
+                Plugin.LogSource.LogInfo("[TAIGU-GUIPatch] HUDManager.Update 补丁首次触发");
             }
 
             // 尝试通过 UIRenderer 渲染

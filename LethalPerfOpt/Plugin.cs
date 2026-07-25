@@ -44,9 +44,9 @@ namespace TAIGU_LC_OptimizePerformance
             // Initialize configuration
             ModConfig.Init(Config);
 
-            // Apply Harmony patches
+            // Apply Harmony patches - 逐个补丁类手动应用，单个失败不影响其他
             HarmonyInstance = new Harmony(PluginGUID);
-            HarmonyInstance.PatchAll();
+            ApplyPatchesSafe();
             LogSource.LogInfo($"[{PluginName}] Harmony 补丁已应用");
 
             // Initialize optimizers
@@ -216,6 +216,51 @@ namespace TAIGU_LC_OptimizePerformance
             CameraOpt.Revert();
 
             LogSource.LogInfo($"[{PluginName}] 全部默认已恢复。");
+        }
+
+        /// <summary>
+        /// 安全应用所有 Harmony 补丁 - 逐个补丁类手动应用，单个失败不影响其他。
+        /// 避免 PatchAll() 因某个补丁无效而整体崩溃。
+        /// </summary>
+        private void ApplyPatchesSafe()
+        {
+            // 列出所有补丁类，逐个应用
+            var patchTypes = new System.Type[]
+            {
+                typeof(Patches.GamePatches),
+                typeof(Patches.RoundManagerPatches),
+                typeof(Patches.FoliageDetailDistancePatch),
+                typeof(Patches.ManualCameraRendererPatch),
+                typeof(Patches.FixCameraResPatches),
+                typeof(Patches.HUDPatches),
+                typeof(Patches.VisorPatches),
+                typeof(Patches.InputHandlerPatch),
+                typeof(Patches.GUIRenderPatch),
+            };
+
+            int successCount = 0;
+            int failCount = 0;
+
+            foreach (var type in patchTypes)
+            {
+                try
+                {
+                    var processor = HarmonyInstance.CreateClassProcessor(type);
+                    if (processor != null)
+                    {
+                        processor.Patch();
+                        LogSource.LogInfo($"[{PluginName}] 补丁已应用: {type.Name}");
+                        successCount++;
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    LogSource.LogWarning($"[{PluginName}] 补丁应用失败 [{type.Name}]: {ex.Message}");
+                    failCount++;
+                }
+            }
+
+            LogSource.LogInfo($"[{PluginName}] 补丁应用完成: {successCount}成功, {failCount}失败");
         }
     }
 }
