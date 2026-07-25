@@ -2,7 +2,6 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
-using System.Collections;
 using TAIGU_LC_OptimizePerformance.Config;
 using TAIGU_LC_OptimizePerformance.UI;
 using TAIGU_LC_OptimizePerformance.Optimizers;
@@ -44,9 +43,11 @@ namespace TAIGU_LC_OptimizePerformance
             // Initialize configuration
             ModConfig.Init(Config);
 
-            // Apply Harmony patches - 逐个补丁类手动应用，单个失败不影响其他
+            // Apply Harmony patches
+            // 注意: 使用 PatchAll() 自动扫描所有 [HarmonyPatch] 类
+            // GUIRenderPatch 现在补丁 HUDManager.Update (存在的方法)
             HarmonyInstance = new Harmony(PluginGUID);
-            ApplyPatchesSafe();
+            HarmonyInstance.PatchAll();
             LogSource.LogInfo($"[{PluginName}] Harmony 补丁已应用");
 
             // Initialize optimizers
@@ -62,19 +63,8 @@ namespace TAIGU_LC_OptimizePerformance
             PerfMonitor = new PerformanceMonitor();
             PerfUI = new PerformanceUI();
 
-            LogSource.LogInfo($"[{PluginName}] Awake() 完成，等待 Start() 创建 UI...");
-        }
-
-        private void Start()
-        {
-            LogSource.LogInfo($"[{PluginName}] Start() 被调用 - 正在创建 UI...");
-
-            // 方案1: 在 Start() 中创建 UI（此时场景已加载，Unity 生命周期正常）
+            // 直接在 Awake() 中创建 UI（避免 Start() 不被调用的问题）
             CreateUIRenderer();
-
-            // 方案2: 启动协程兜底 - 如果方案1创建的组件未被 Unity 调用，
-            // 协程会在 3 秒后检测并尝试修复
-            StartCoroutine(LateInitUICoroutine());
 
             // Apply initial optimizations based on config
             if (ModConfig.EnableOnStart.Value)
@@ -106,8 +96,6 @@ namespace TAIGU_LC_OptimizePerformance
 
             var uiGo = new GameObject("TAIGU_UI_Renderer");
             DontDestroyOnLoad(uiGo);
-
-            // 确保激活
             uiGo.SetActive(true);
 
             var uiRenderer = uiGo.AddComponent<UIRenderer>();
@@ -115,51 +103,6 @@ namespace TAIGU_LC_OptimizePerformance
             uiRenderer.Initialize(PerfUI);
 
             LogSource.LogInfo($"[{PluginName}] UI Renderer 已创建: activeSelf={uiGo.activeSelf}, enabled={uiRenderer.enabled}");
-        }
-
-        /// <summary>
-        /// 协程兜底：延迟检测 UI 是否正常工作
-        /// 如果 Update/OnGUI 未被调用，尝试重新创建或启用
-        /// </summary>
-        private IEnumerator LateInitUICoroutine()
-        {
-            // 等待 3 秒让 Unity 完全初始化
-            yield return new WaitForSeconds(3f);
-
-            LogSource.LogInfo($"[{PluginName}][兜底] 3秒检测开始...");
-
-            if (UIRenderer.Instance == null)
-            {
-                LogSource.LogWarning($"[{PluginName}][兜底] UIRenderer.Instance 为 null！尝试重新创建...");
-                CreateUIRenderer();
-                yield break;
-            }
-
-            // 检查 GameObject 状态
-            var uiGo = GameObject.Find("TAIGU_UI_Renderer");
-            if (uiGo == null)
-            {
-                LogSource.LogWarning($"[{PluginName}][兜底] TAIGU_UI_Renderer GameObject 不存在！重新创建...");
-                CreateUIRenderer();
-                yield break;
-            }
-
-            // 确保激活
-            if (!uiGo.activeSelf)
-            {
-                LogSource.LogWarning($"[{PluginName}][兜底] GameObject 未激活，正在激活...");
-                uiGo.SetActive(true);
-            }
-
-            // 确保组件启用
-            var renderer = uiGo.GetComponent<UIRenderer>();
-            if (renderer != null && !renderer.enabled)
-            {
-                LogSource.LogWarning($"[{PluginName}][兜底] UIRenderer 组件未启用，正在启用...");
-                renderer.enabled = true;
-            }
-
-            LogSource.LogInfo($"[{PluginName}][兜底] 检测完成: GameObject存在={uiGo != null}, 激活={uiGo.activeSelf}");
         }
 
         private void OnDestroy()
@@ -216,51 +159,6 @@ namespace TAIGU_LC_OptimizePerformance
             CameraOpt.Revert();
 
             LogSource.LogInfo($"[{PluginName}] 全部默认已恢复。");
-        }
-
-        /// <summary>
-        /// 安全应用所有 Harmony 补丁 - 逐个补丁类手动应用，单个失败不影响其他。
-        /// 避免 PatchAll() 因某个补丁无效而整体崩溃。
-        /// </summary>
-        private void ApplyPatchesSafe()
-        {
-            // 列出所有补丁类，逐个应用
-            var patchTypes = new System.Type[]
-            {
-                typeof(Patches.GamePatches),
-                typeof(Patches.RoundManagerPatches),
-                typeof(Patches.FoliageDetailDistancePatch),
-                typeof(Patches.ManualCameraRendererPatch),
-                typeof(Patches.FixCameraResPatches),
-                typeof(Patches.HUDPatches),
-                typeof(Patches.VisorPatches),
-                typeof(Patches.InputHandlerPatch),
-                typeof(Patches.GUIRenderPatch),
-            };
-
-            int successCount = 0;
-            int failCount = 0;
-
-            foreach (var type in patchTypes)
-            {
-                try
-                {
-                    var processor = HarmonyInstance.CreateClassProcessor(type);
-                    if (processor != null)
-                    {
-                        processor.Patch();
-                        LogSource.LogInfo($"[{PluginName}] 补丁已应用: {type.Name}");
-                        successCount++;
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    LogSource.LogWarning($"[{PluginName}] 补丁应用失败 [{type.Name}]: {ex.Message}");
-                    failCount++;
-                }
-            }
-
-            LogSource.LogInfo($"[{PluginName}] 补丁应用完成: {successCount}成功, {failCount}失败");
         }
     }
 }

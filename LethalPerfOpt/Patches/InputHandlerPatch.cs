@@ -15,7 +15,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     [HarmonyPatch(typeof(PlayerControllerB))]
     public class InputHandlerPatch
     {
-        private static bool _logged;
+        private static int _callCount;
 
         /// <summary>
         /// 补丁 PlayerControllerB.Update - 每帧检测按键 + 渲染 UI
@@ -24,10 +24,12 @@ namespace TAIGU_LC_OptimizePerformance.Patches
         [HarmonyPostfix]
         private static void PlayerControllerB_Update()
         {
-            if (!_logged)
+            _callCount++;
+
+            // 每 300 帧输出一次日志
+            if (_callCount % 300 == 1)
             {
-                _logged = true;
-                Plugin.LogSource.LogInfo("[TAIGU-InputPatch] PlayerControllerB.Update 补丁首次触发");
+                Plugin.LogSource.LogInfo($"[TAIGU-InputPatch] PlayerControllerB.Update 补丁触发中... 已调用 {_callCount} 次");
             }
 
             var uiRenderer = UIRenderer.Instance;
@@ -70,23 +72,24 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     }
 
     /// <summary>
-    /// UI 渲染兜底补丁 - 使用 HUDManager.Update 来渲染 UI。
-    /// 虽然 IMGUI 最好在 OnGUI 中调用，但 HUDManager.Update 每帧执行，
-    /// 我们可以在此调用 GUI 方法，在下一帧的 GUI 阶段生效。
+    /// UI 渲染兜底补丁 - 使用 HUDManager.Update 来检测按键和渲染 UI。
+    /// HUDManager 是游戏中始终存在的 UI 管理器，其 Update 每帧执行。
     /// </summary>
     [HarmonyPatch(typeof(HUDManager))]
     public class GUIRenderPatch
     {
-        private static bool _logged;
+        private static int _callCount;
 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         private static void HUDManager_Update()
         {
-            if (!_logged)
+            _callCount++;
+
+            // 每 300 帧输出一次日志
+            if (_callCount % 300 == 1)
             {
-                _logged = true;
-                Plugin.LogSource.LogInfo("[TAIGU-GUIPatch] HUDManager.Update 补丁首次触发");
+                Plugin.LogSource.LogInfo($"[TAIGU-GUIPatch] HUDManager.Update 补丁触发中... 已调用 {_callCount} 次");
             }
 
             // 尝试通过 UIRenderer 渲染
@@ -94,18 +97,52 @@ namespace TAIGU_LC_OptimizePerformance.Patches
             if (uiRenderer != null)
             {
                 uiRenderer.RenderGUI();
+
+                // 也通过 UIRenderer 处理按键（双重保险）
+                uiRenderer.HandleInput();
             }
-            else if (Plugin.PerfUI != null && (Plugin.PerfUI.IsVisible || Plugin.PerfUI.ShowFPS))
+            else if (Plugin.PerfUI != null)
             {
                 // 直接渲染（最终兜底）
                 try
                 {
-                    Plugin.PerfUI.OnGUI();
+                    if (Plugin.PerfUI.IsVisible || Plugin.PerfUI.ShowFPS)
+                    {
+                        Plugin.PerfUI.OnGUI();
+                    }
                 }
                 catch (System.Exception ex)
                 {
                     Plugin.LogSource.LogError($"[TAIGU-GUIPatch] 渲染异常: {ex.Message}");
                 }
+
+                // 直接处理按键
+                HandleInputDirect();
+            }
+        }
+
+        /// <summary>
+        /// 直接处理按键
+        /// </summary>
+        private static void HandleInputDirect()
+        {
+            try
+            {
+                if (Input.GetKeyDown(ModConfig.ToggleUIKey.Value))
+                {
+                    Plugin.PerfUI.IsVisible = !Plugin.PerfUI.IsVisible;
+                    Plugin.LogSource.LogInfo($"[TAIGU-GUIPatch][直接] UI 切换: {Plugin.PerfUI.IsVisible}");
+                }
+
+                if (Input.GetKeyDown(ModConfig.ToggleFPSKey.Value))
+                {
+                    Plugin.PerfUI.ShowFPS = !Plugin.PerfUI.ShowFPS;
+                    Plugin.LogSource.LogInfo($"[TAIGU-GUIPatch][直接] FPS 切换: {Plugin.PerfUI.ShowFPS}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Plugin.LogSource.LogError($"[TAIGU-GUIPatch] 按键异常: {ex.Message}");
             }
         }
     }
