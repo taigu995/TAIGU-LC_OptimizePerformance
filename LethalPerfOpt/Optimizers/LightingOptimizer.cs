@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 using TAIGU_LC_OptimizePerformance.Config;
 
@@ -120,14 +121,17 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
 
         /// <summary>
         /// 更新所有体积雾（参考 LethalSponge 的 FogModifier）
+        /// 支持 FogMode: Vanilla/Hide/Disable/ForceDisable
         /// </summary>
         private void UpdateAllFogs()
         {
             _modifiedFogs.Clear();
 
+            string fogMode = ModConfig.FogMode.Value;
             float fogDistMult = ModConfig.VolumetricFogDistanceMultiplier.Value;
             float fogDistCap = ModConfig.VolumetricFogDistanceCap.Value;
 
+            // 1. 处理 LocalVolumetricFog (局部体积雾)
             var allFogs = Resources.FindObjectsOfTypeAll<LocalVolumetricFog>();
             foreach (var fog in allFogs)
             {
@@ -136,7 +140,17 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
                 float origDistance = fog.parameters.meanFreePath;
                 _modifiedFogs.Add((fog, origDistance));
 
-                if (fogDistMult != 1.0f)
+                if (fogMode == "ForceDisable" || fogMode == "Disable")
+                {
+                    // 完全禁用雾效
+                    fog.parameters.meanFreePath = 9999f;
+                }
+                else if (fogMode == "Hide")
+                {
+                    // 隐藏雾效（体积设为极小）
+                    fog.parameters.meanFreePath = 9999f;
+                }
+                else if (fogDistMult != 1.0f)
                 {
                     float newDistance = origDistance * fogDistMult;
                     if (fogDistCap > 0)
@@ -145,6 +159,27 @@ namespace TAIGU_LC_OptimizePerformance.Optimizers
                     }
                     fog.parameters.meanFreePath = newDistance;
                 }
+            }
+
+            // 2. 处理 Volume 组件的 Fog 覆盖 (HDRP 全局雾)
+            if (fogMode == "ForceDisable" || fogMode == "Disable")
+            {
+                var allVolumes = Resources.FindObjectsOfTypeAll<Volume>();
+                foreach (var volume in allVolumes)
+                {
+                    if (volume == null || volume.profile == null) continue;
+
+                    if (volume.profile.TryGet<Fog>(out var fogOverride))
+                    {
+                        fogOverride.active = false;
+                    }
+                }
+            }
+
+            // 3. 禁用 Legacy fog
+            if (fogMode == "ForceDisable" || fogMode == "Disable")
+            {
+                RenderSettings.fog = false;
             }
         }
     }

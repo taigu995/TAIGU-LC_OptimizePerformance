@@ -435,7 +435,32 @@ namespace TAIGU_LC_OptimizePerformance.UI
             GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
-            if (GUILayout.Button("应用灯光设置", UIStyles.ButtonStyle))
+
+            GUILayout.Label("--- 雾效优化 ---", UIStyles.SectionHeaderStyle);
+
+            string[] fogModes = { "Vanilla", "Hide", "Disable", "ForceDisable" };
+            string[] fogModeLabels = { "原版雾效", "隐藏雾效", "禁用雾效", "强制禁用" };
+            int currentFogIndex = System.Array.IndexOf(fogModes, ModConfig.FogMode.Value);
+            if (currentFogIndex < 0) currentFogIndex = 0;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("雾效模式:", UIStyles.BoldLabelStyle, GUILayout.Width(120));
+            int newFogIndex = GUILayout.SelectionGrid(currentFogIndex, fogModeLabels, 2, UIStyles.ToggleStyle);
+            if (newFogIndex != currentFogIndex)
+            {
+                ModConfig.FogMode.Value = fogModes[newFogIndex];
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("体积雾距离乘数:", UIStyles.LabelStyle, GUILayout.Width(160));
+            ModConfig.VolumetricFogDistanceMultiplier.Value = GUILayout.HorizontalSlider(
+                ModConfig.VolumetricFogDistanceMultiplier.Value, 0f, 2f);
+            GUILayout.Label($"{ModConfig.VolumetricFogDistanceMultiplier.Value:F2}", UIStyles.LabelStyle, GUILayout.Width(50));
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(10);
+            if (GUILayout.Button("应用灯光/雾效设置", UIStyles.ButtonStyle))
                 Plugin.LightingOpt?.Apply();
         }
 
