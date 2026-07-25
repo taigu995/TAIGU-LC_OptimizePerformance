@@ -58,9 +58,15 @@ namespace TAIGU_LC_OptimizePerformance
             PerfMonitor = new PerformanceMonitor();
             PerfUI = new PerformanceUI();
 
-            // 创建独立的 UIRenderer 组件来渲染 UI
-            var uiRenderer = gameObject.AddComponent<UIRenderer>();
+            // 创建独立的 GameObject 来承载 UI 渲染器
+            // 确保 OnGUI 被 Unity 正确调用（独立于 BaseUnityPlugin 的生命周期）
+            var uiGo = new GameObject("TAIGU_UI_Renderer");
+            DontDestroyOnLoad(uiGo);
+            var uiRenderer = uiGo.AddComponent<UIRenderer>();
             uiRenderer.Initialize(PerfUI);
+
+            // 设置 Harmony 补丁的渲染器实例（备用方案，确保 UI 渲染）
+            Patches.OnGUIHookPatch.SetRenderer(uiRenderer);
 
             LogSource.LogInfo($"[{PluginName}] v{PluginVersion} 作者: {PluginAuthor} 加载成功！");
             LogSource.LogInfo($"[{PluginName}] 按 F5 打开性能优化面板，按 F6 切换 FPS 显示。");
