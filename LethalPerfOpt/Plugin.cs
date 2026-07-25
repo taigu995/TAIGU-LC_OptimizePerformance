@@ -65,9 +65,6 @@ namespace TAIGU_LC_OptimizePerformance
             var uiRenderer = uiGo.AddComponent<UIRenderer>();
             uiRenderer.Initialize(PerfUI);
 
-            // 设置 Harmony 补丁的渲染器实例（备用方案，确保 UI 渲染）
-            Patches.OnGUIHookPatch.SetRenderer(uiRenderer);
-
             LogSource.LogInfo($"[{PluginName}] v{PluginVersion} 作者: {PluginAuthor} 加载成功！");
             LogSource.LogInfo($"[{PluginName}] 按 F5 打开性能优化面板，按 F6 切换 FPS 显示。");
         }
