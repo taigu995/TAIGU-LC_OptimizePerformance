@@ -43,7 +43,7 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             if (IsVisible)
             {
-                GUI.ModalWindow(9527, _windowRect, DrawMainWindow,
+                GUI.Window(9527, _windowRect, DrawMainWindow,
                     "TAIGU-LC_OptimizePerformance v1.0.0 - 终极性能优化套件",
                     UIStyles.WindowStyle);
             }

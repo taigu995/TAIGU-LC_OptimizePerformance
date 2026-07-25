@@ -105,6 +105,16 @@ namespace TAIGU_LC_OptimizePerformance.UI
             {
                 Plugin.LogSource.LogError($"[TAIGU-UI] 按键检测异常: {ex.Message}");
             }
+
+            // 处理光标状态 - UI 显示时解锁光标，方便操作
+            if (_perfUI != null && _perfUI.IsVisible)
+            {
+                if (Cursor.lockState == CursorLockMode.Locked)
+                {
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+            }
         }
 
         private void OnGUI()
