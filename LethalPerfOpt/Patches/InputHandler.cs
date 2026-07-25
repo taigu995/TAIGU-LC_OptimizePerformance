@@ -79,16 +79,20 @@ namespace TAIGU_LC_OptimizePerformance.Patches
         {
             try
             {
-                if (Input.GetKeyDown(ModConfig.ToggleUIKey.Value))
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard != null)
                 {
-                    Plugin.PerfUI.IsVisible = !Plugin.PerfUI.IsVisible;
-                    Plugin.LogSource.LogInfo($"[TAIGU-Input][直接] UI 切换: {Plugin.PerfUI.IsVisible}");
-                }
+                    if (keyboard.f5Key.wasPressedThisFrame)
+                    {
+                        Plugin.PerfUI.IsVisible = !Plugin.PerfUI.IsVisible;
+                        Plugin.LogSource.LogInfo($"[TAIGU-Input][直接] UI 切换: {Plugin.PerfUI.IsVisible}");
+                    }
 
-                if (Input.GetKeyDown(ModConfig.ToggleFPSKey.Value))
-                {
-                    Plugin.PerfUI.ShowFPS = !Plugin.PerfUI.ShowFPS;
-                    Plugin.LogSource.LogInfo($"[TAIGU-Input][直接] FPS 切换: {Plugin.PerfUI.ShowFPS}");
+                    if (keyboard.f6Key.wasPressedThisFrame)
+                    {
+                        Plugin.PerfUI.ShowFPS = !Plugin.PerfUI.ShowFPS;
+                        Plugin.LogSource.LogInfo($"[TAIGU-Input][直接] FPS 切换: {Plugin.PerfUI.ShowFPS}");
+                    }
                 }
             }
             catch (System.Exception ex)

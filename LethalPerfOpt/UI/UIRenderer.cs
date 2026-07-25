@@ -82,19 +82,23 @@ namespace TAIGU_LC_OptimizePerformance.UI
                 Plugin.PerfMonitor.Update();
             }
 
-            // 按键检测（Input.GetKeyDown 在 Update 中最可靠）
+            // 按键检测（使用 Unity Input System Package）
             try
             {
-                if (Input.GetKeyDown(ModConfig.ToggleUIKey.Value))
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard != null)
                 {
-                    _perfUI.IsVisible = !_perfUI.IsVisible;
-                    Plugin.LogSource.LogInfo($"[TAIGU-UI] UI 切换: {_perfUI.IsVisible}");
-                }
+                    if (keyboard.f5Key.wasPressedThisFrame)
+                    {
+                        _perfUI.IsVisible = !_perfUI.IsVisible;
+                        Plugin.LogSource.LogInfo($"[TAIGU-UI] UI 切换: {_perfUI.IsVisible}");
+                    }
 
-                if (Input.GetKeyDown(ModConfig.ToggleFPSKey.Value))
-                {
-                    _perfUI.ShowFPS = !_perfUI.ShowFPS;
-                    Plugin.LogSource.LogInfo($"[TAIGU-UI] FPS 显示切换: {_perfUI.ShowFPS}");
+                    if (keyboard.f6Key.wasPressedThisFrame)
+                    {
+                        _perfUI.ShowFPS = !_perfUI.ShowFPS;
+                        Plugin.LogSource.LogInfo($"[TAIGU-UI] FPS 显示切换: {_perfUI.ShowFPS}");
+                    }
                 }
             }
             catch (System.Exception ex)
@@ -155,16 +159,20 @@ namespace TAIGU_LC_OptimizePerformance.UI
 
             try
             {
-                if (Input.GetKeyDown(ModConfig.ToggleUIKey.Value))
+                var keyboard = UnityEngine.InputSystem.Keyboard.current;
+                if (keyboard != null)
                 {
-                    _perfUI.IsVisible = !_perfUI.IsVisible;
-                    Plugin.LogSource.LogInfo($"[TAIGU-UI][兜底] UI 切换: {_perfUI.IsVisible}");
-                }
+                    if (keyboard.f5Key.wasPressedThisFrame)
+                    {
+                        _perfUI.IsVisible = !_perfUI.IsVisible;
+                        Plugin.LogSource.LogInfo($"[TAIGU-UI][兜底] UI 切换: {_perfUI.IsVisible}");
+                    }
 
-                if (Input.GetKeyDown(ModConfig.ToggleFPSKey.Value))
-                {
-                    _perfUI.ShowFPS = !_perfUI.ShowFPS;
-                    Plugin.LogSource.LogInfo($"[TAIGU-UI][兜底] FPS 显示切换: {_perfUI.ShowFPS}");
+                    if (keyboard.f6Key.wasPressedThisFrame)
+                    {
+                        _perfUI.ShowFPS = !_perfUI.ShowFPS;
+                        Plugin.LogSource.LogInfo($"[TAIGU-UI][兜底] FPS 显示切换: {_perfUI.ShowFPS}");
+                    }
                 }
             }
             catch (System.Exception ex)
