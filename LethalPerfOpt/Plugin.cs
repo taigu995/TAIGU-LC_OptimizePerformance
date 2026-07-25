@@ -57,8 +57,8 @@ namespace TAIGU_LC_OptimizePerformance
             PerfMonitor = new PerformanceMonitor();
             PerfUI = new PerformanceUI();
 
-            LogSource.LogInfo($"[{PluginName}] v{PluginVersion} by {PluginAuthor} loaded successfully!");
-            LogSource.LogInfo($"[{PluginName}] Press F5 to open the performance optimization panel.");
+            LogSource.LogInfo($"[{PluginName}] v{PluginVersion} 作者: {PluginAuthor} 加载成功！");
+            LogSource.LogInfo($"[{PluginName}] 按 F5 打开性能优化面板，按 F6 切换 FPS 显示。");
         }
 
         private void Start()
@@ -76,7 +76,7 @@ namespace TAIGU_LC_OptimizePerformance
             if (Input.GetKeyDown(ModConfig.ToggleUIKey.Value))
             {
                 PerfUI.IsVisible = !PerfUI.IsVisible;
-                LogSource.LogDebug($"[{PluginName}] UI toggled: {PerfUI.IsVisible}");
+                LogSource.LogDebug($"[{PluginName}] UI 切换: {PerfUI.IsVisible}");
             }
 
             // Handle FPS counter toggle
@@ -110,7 +110,7 @@ namespace TAIGU_LC_OptimizePerformance
 
         public static void ApplyAllOptimizations()
         {
-            LogSource.LogInfo($"[{PluginName}] Applying all optimizations...");
+            LogSource.LogInfo($"[{PluginName}] 正在应用全部优化...");
 
             if (ModConfig.EnableRenderOpt.Value)
                 RenderOpt.Apply();
@@ -133,12 +133,12 @@ namespace TAIGU_LC_OptimizePerformance
             if (ModConfig.EnableAudioOpt.Value)
                 AudioOpt.Apply();
 
-            LogSource.LogInfo($"[{PluginName}] All optimizations applied!");
+            LogSource.LogInfo($"[{PluginName}] 全部优化已应用！");
         }
 
         public static void RevertAllOptimizations()
         {
-            LogSource.LogInfo($"[{PluginName}] Reverting all optimizations...");
+            LogSource.LogInfo($"[{PluginName}] 正在恢复全部优化...");
 
             RenderOpt.Revert();
             MemoryOpt.Revert();
@@ -148,7 +148,7 @@ namespace TAIGU_LC_OptimizePerformance
             LightingOpt.Revert();
             AudioOpt.Revert();
 
-            LogSource.LogInfo($"[{PluginName}] All optimizations reverted!");
+            LogSource.LogInfo($"[{PluginName}] 全部优化已恢复！");
         }
     }
 }

@@ -5,14 +5,14 @@ using TAIGU_LC_OptimizePerformance.Config;
 namespace TAIGU_LC_OptimizePerformance.Patches
 {
     /// <summary>
-    /// Harmony patches for render optimization.
-    /// Intercepts game rendering calls to apply optimizations.
+    /// 渲染优化 Harmony 补丁
+    /// 拦截游戏渲染调用以应用优化
     /// </summary>
     [HarmonyPatch]
     public static class RenderPatches
     {
         /// <summary>
-        /// Patch Camera setup to apply render distance and culling settings.
+        /// 补丁 Camera 初始化，应用绘制距离和遮挡剔除设置
         /// </summary>
         [HarmonyPatch(typeof(Camera), "Awake")]
         [HarmonyPostfix]
@@ -20,10 +20,10 @@ namespace TAIGU_LC_OptimizePerformance.Patches
         {
             if (!ModConfig.EnableRenderOpt.Value) return;
 
-            // Apply render distance to new cameras
+            // 为新相机应用绘制距离
             __instance.farClipPlane = ModConfig.MaxDrawDistance.Value;
 
-            // Disable HDR on non-main cameras for performance
+            // 非主相机关闭 HDR 以提升性能
             if (__instance != Camera.main)
             {
                 __instance.allowHDR = false;
@@ -32,13 +32,13 @@ namespace TAIGU_LC_OptimizePerformance.Patches
         }
 
         /// <summary>
-        /// Patch QualitySettings changes to maintain our optimizations.
+        /// 补丁 QualitySettings 变更，保持我们的优化设置
         /// </summary>
         [HarmonyPatch(typeof(Application), "set_targetFrameRate")]
         [HarmonyPrefix]
         public static bool TargetFrameRatePatch(ref int value)
         {
-            // Only allow the game to change frame rate if we haven't set a limit
+            // 如果我们设置了帧率上限，阻止游戏修改
             if (ModConfig.MaxFPS.Value > 0)
             {
                 value = ModConfig.MaxFPS.Value;
@@ -48,13 +48,13 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     }
 
     /// <summary>
-    /// Harmony patches for particle optimization.
+    /// 粒子系统优化 Harmony 补丁
     /// </summary>
     [HarmonyPatch]
     public static class ParticlePatches
     {
         /// <summary>
-        /// Patch ParticleSystem.Play to apply distance culling.
+        /// 补丁 ParticleSystem.Play，应用距离剔除
         /// </summary>
         [HarmonyPatch(typeof(ParticleSystem), "Play")]
         [HarmonyPrefix]
@@ -69,7 +69,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                 mainCam.transform.position,
                 __instance.transform.position);
 
-            // Don't play particles beyond culling distance
+            // 超出剔除距离的粒子不播放
             if (distance > ModConfig.ParticleCullingDistance.Value)
             {
                 return false;
@@ -80,13 +80,13 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     }
 
     /// <summary>
-    /// Harmony patches for lighting optimization.
+    /// 灯光优化 Harmony 补丁
     /// </summary>
     [HarmonyPatch]
     public static class LightingPatches
     {
         /// <summary>
-        /// Patch Light component to apply distance-based optimization.
+        /// 补丁 Light 组件，应用基于距离的优化
         /// </summary>
         [HarmonyPatch(typeof(Light), "Awake")]
         [HarmonyPostfix]
@@ -95,7 +95,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
             if (!ModConfig.EnableLightingOpt.Value) return;
             if (__instance == null) return;
 
-            // Reduce shadow quality for point/spot lights by default
+            // 默认降低点光源/聚光灯的阴影质量
             if (__instance.type == LightType.Point || __instance.type == LightType.Spot)
             {
                 if (ModConfig.DisableDynamicShadows.Value)
@@ -103,7 +103,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                     __instance.shadows = LightShadows.None;
                 }
 
-                // Reduce light range for performance
+                // 为性能缩减灯光范围
                 if (__instance.range > ModConfig.LightCullingDistance.Value)
                 {
                     __instance.range = ModConfig.LightCullingDistance.Value;
@@ -113,13 +113,13 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     }
 
     /// <summary>
-    /// Harmony patches for physics optimization.
+    /// 物理引擎优化 Harmony 补丁
     /// </summary>
     [HarmonyPatch]
     public static class PhysicsPatches
     {
         /// <summary>
-        /// Patch Rigidbody to optimize sleeping behavior.
+        /// 补丁 Rigidbody，优化休眠行为
         /// </summary>
         [HarmonyPatch(typeof(Rigidbody), "Awake")]
         [HarmonyPostfix]
@@ -128,27 +128,27 @@ namespace TAIGU_LC_OptimizePerformance.Patches
             if (!ModConfig.EnablePhysicsOpt.Value) return;
             if (__instance == null) return;
 
-            // Apply optimized sleep threshold
+            // 应用优化后的休眠阈值
             __instance.sleepThreshold = ModConfig.SleepThreshold.Value;
 
-            // Reduce collision detection mode for non-essential objects
+            // 非玩家/非敌人对象降低碰撞检测模式
             string name = __instance.gameObject.name.ToLower();
             if (!name.Contains("player") && !name.Contains("enemy"))
             {
                 __instance.collisionDetectionMode = CollisionDetectionMode.Discrete;
-                __instance.maxAngularVelocity = 7f; // Reduced from default
+                __instance.maxAngularVelocity = 7f; // 从默认值降低
             }
         }
     }
 
     /// <summary>
-    /// Harmony patches for audio optimization.
+    /// 音频优化 Harmony 补丁
     /// </summary>
     [HarmonyPatch]
     public static class AudioPatches
     {
         /// <summary>
-        /// Patch AudioSource.Play to apply distance culling.
+        /// 补丁 AudioSource.Play，应用距离剔除
         /// </summary>
         [HarmonyPatch(typeof(AudioSource), "Play")]
         [HarmonyPrefix]
@@ -164,7 +164,7 @@ namespace TAIGU_LC_OptimizePerformance.Patches
                 mainCam.transform.position,
                 __instance.transform.position);
 
-            // Don't play audio beyond culling distance
+            // 超出剔除距离的音频不播放
             if (distance > ModConfig.AudioCullingDistance.Value)
             {
                 return false;
@@ -175,20 +175,20 @@ namespace TAIGU_LC_OptimizePerformance.Patches
     }
 
     /// <summary>
-    /// Harmony patches for scene loading optimization.
+    /// 场景加载优化 Harmony 补丁
     /// </summary>
     [HarmonyPatch]
     public static class ScenePatches
     {
         /// <summary>
-        /// Patch scene loading to trigger memory cleanup.
+        /// 补丁场景加载，触发内存清理
         /// </summary>
         [HarmonyPatch(typeof(UnityEngine.SceneManagement.SceneManager), "LoadScene",
             new System.Type[] { typeof(string) })]
         [HarmonyPrefix]
         public static void SceneLoadPatch(string sceneName)
         {
-            // Force GC before scene load to reduce memory spike
+            // 场景加载前强制 GC 以减少内存峰值
             if (ModConfig.EnableMemoryOpt.Value)
             {
                 System.GC.Collect();

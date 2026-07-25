@@ -6,3 +6,4 @@
 /workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/LethalPerfOpt.csproj.CoreCompileInputs.cache
 /workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.dll
 /workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/TAIGU-LC_OptimizePerformance.pdb
+/workspace/projects/LethalPerfOpt/obj/Release/netstandard2.1/LethalPerfOpt.sourcelink.json
