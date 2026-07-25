@@ -130,6 +130,27 @@ namespace TAIGU_LC_OptimizePerformance.Config
         // ===== VSync (来自 LethalSponge) =====
         public static ConfigEntry<int> VSyncCount;
 
+        // ===== 摄像头分辨率自定义 (来自 Fix-Camera-Resolution) =====
+        public static ConfigEntry<bool> EnableCameraResCustom;
+        public static ConfigEntry<bool> CameraResAutoSize;
+        public static ConfigEntry<int> CameraResWidth;
+        public static ConfigEntry<int> CameraResHeight;
+        public static ConfigEntry<bool> CheckResEveryFrame;
+
+        // ===== HDRP 后处理模式 (来自 Fix-Camera-Resolution) =====
+        public static ConfigEntry<string> AntialiasingMode;
+        public static ConfigEntry<string> HDRPBloomMode;
+        public static ConfigEntry<string> FogMode;
+        public static ConfigEntry<string> HDRPShadowMode;
+        public static ConfigEntry<string> HDRPPostProcessingMode;
+        public static ConfigEntry<string> HDRPVignetteMode;
+
+        // ===== 头盔面罩移除 (来自 Fix-Camera-Resolution) =====
+        public static ConfigEntry<bool> DisableVisor;
+
+        // ===== HUD 宽高比 (来自 Fix-Camera-Resolution) =====
+        public static ConfigEntry<bool> FixedAspectRatio;
+
         public static void Init(ConfigFile configFile)
         {
             // 快捷键
@@ -329,6 +350,40 @@ namespace TAIGU_LC_OptimizePerformance.Config
             // VSync
             VSyncCount = configFile.Bind("Render", "VSyncCount", 1,
                 "垂直同步次数 (0=关闭, 1=60fps, 2=30fps)");
+
+            // ===== 摄像头分辨率自定义 (来自 Fix-Camera-Resolution) =====
+            EnableCameraResCustom = configFile.Bind("Camera", "EnableCameraResCustom", false,
+                "启用摄像头分辨率自定义（参考 Fix-Camera-Resolution）");
+            CameraResAutoSize = configFile.Bind("Camera", "CameraResAutoSize", true,
+                "自动适配窗口大小");
+            CameraResWidth = configFile.Bind("Camera", "CameraResWidth", 1920,
+                "摄像头分辨率宽度 (10-3840)");
+            CameraResHeight = configFile.Bind("Camera", "CameraResHeight", 1080,
+                "摄像头分辨率高度 (10-2160)");
+            CheckResEveryFrame = configFile.Bind("Camera", "CheckResEveryFrame", false,
+                "每帧检测分辨率变化（可能影响性能）");
+
+            // ===== HDRP 后处理模式 (来自 Fix-Camera-Resolution) =====
+            AntialiasingMode = configFile.Bind("HDRP", "AntialiasingMode", "None",
+                "抗锯齿模式: None/FXAA/TAA/SMAA");
+            HDRPBloomMode = configFile.Bind("HDRP", "HDRPBloomMode", "Vanilla",
+                "泛光效果: Vanilla/Disable");
+            FogMode = configFile.Bind("HDRP", "FogMode", "Vanilla",
+                "雾效模式: Vanilla/Hide/Disable/ForceDisable");
+            HDRPShadowMode = configFile.Bind("HDRP", "HDRPShadowMode", "Vanilla",
+                "阴影渲染: Vanilla/Disable");
+            HDRPPostProcessingMode = configFile.Bind("HDRP", "HDRPPostProcessingMode", "Vanilla",
+                "后处理效果: Vanilla/Disable");
+            HDRPVignetteMode = configFile.Bind("HDRP", "HDRPVignetteMode", "Vanilla",
+                "暗角效果: Vanilla/Disable");
+
+            // ===== 头盔面罩移除 (来自 Fix-Camera-Resolution) =====
+            DisableVisor = configFile.Bind("Visor", "DisableVisor", false,
+                "移除头盔面罩渲染（参考 Fix-Camera-Resolution）");
+
+            // ===== HUD 宽高比 (来自 Fix-Camera-Resolution) =====
+            FixedAspectRatio = configFile.Bind("HUD", "FixedAspectRatio", true,
+                "固定 HUD 宽高比（关闭以动态适配窗口）");
         }
     }
 }
